@@ -22,7 +22,7 @@ struct HomeView: View {
                 FeaturedProductCard()
             }
             .padding()
-            .padding(.bottom, 80) // espacio para la tab bar
+            .padding(.bottom, 30) // espacio para la tab bar
         }
     }
 }
