@@ -15,6 +15,8 @@ struct UniMarket_SwiftApp: App {
         WindowGroup {
             RootView()
                 .environmentObject(session)
+                .tint(AppTheme.accent)
+                .font(.poppinsRegular(16))
         }
     }
 }

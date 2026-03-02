@@ -12,16 +12,25 @@ struct HomeView: View {
     let onStartSelling: () -> Void
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: 24) {
-                HomeHeaderView()
-                HomeActionButtonsView(
-                    onBrowseItems: onBrowseItems,
-                    onStartSelling: onStartSelling
-                )
-                FeaturedProductCard()
+        ZStack {
+            AppTheme.background
+                .ignoresSafeArea()
+
+            ScrollView {
+                VStack(spacing: 24) {
+                    HomeHeaderView()
+
+                    HomeActionButtonsView(
+                        onBrowseItems: onBrowseItems,
+                        onStartSelling: onStartSelling
+                    )
+
+                    FeaturedProductCard()
+                }
+                .padding(.horizontal, 16)
+                .padding(.top, 16)
+                .padding(.bottom, 100)
             }
-            .padding()
         }
     }
 }

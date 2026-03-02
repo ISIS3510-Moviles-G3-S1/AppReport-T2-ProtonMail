@@ -14,21 +14,21 @@ struct EcoSaysCard: View {
         HStack(alignment: .top, spacing: 12) {
             ZStack {
                 RoundedRectangle(cornerRadius: 16)
-                    .fill(Color.gray.opacity(0.12))
+                    .fill(AppTheme.background)
                     .frame(width: 86, height: 86)
                 Image(systemName: "leaf.fill")
-                    .font(.system(size: 30))
-                    .foregroundColor(.green)
+                    .font(.poppinsSemiBold(30))
+                    .foregroundStyle(AppTheme.accent)
             }
 
             VStack(alignment: .leading, spacing: 6) {
                 Text("Eco says:")
-                    .font(.subheadline)
-                    .fontWeight(.semibold)
-                    .foregroundColor(.green)
+                    .font(.poppinsSemiBold(14))
+                    .foregroundStyle(AppTheme.accent)
 
                 Text(message)
-                    .font(.subheadline)
+                    .font(.poppinsRegular(14))
+                    .foregroundStyle(AppTheme.primaryText)
             }
 
             Spacer()
@@ -36,8 +36,8 @@ struct EcoSaysCard: View {
         .padding(14)
         .background(
             RoundedRectangle(cornerRadius: 18)
-                .fill(.background)
-                .shadow(radius: 6)
+                .fill(.white)
+                .shadow(color: .black.opacity(0.08), radius: 6)
         )
     }
 }

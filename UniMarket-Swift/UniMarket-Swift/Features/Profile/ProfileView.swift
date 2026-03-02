@@ -11,27 +11,30 @@ struct ProfileView: View {
     @StateObject private var vm = ProfileViewModel()
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
+        ZStack {
+            AppTheme.background
+                .ignoresSafeArea()
 
-                Text("Profile")
-                    .font(.title)
-                    .fontWeight(.bold)
-                    .padding(.horizontal)
+            ScrollView {
+                VStack(alignment: .leading, spacing: 16) {
+                    Text("Profile")
+                        .font(.poppinsBold(30))
+                        .foregroundStyle(AppTheme.primaryText)
+                        .padding(.horizontal)
 
-                ProfileHeaderCard(profile: vm.profile)
-                    .padding(.horizontal)
+                    ProfileHeaderCard(profile: vm.profile)
+                        .padding(.horizontal)
 
-                Divider().padding(.horizontal)
+                    Divider().padding(.horizontal)
 
-                EcoSaysCard(message: vm.ecoMessage)
-                    .padding(.horizontal)
+                    EcoSaysCard(message: vm.ecoMessage)
+                        .padding(.horizontal)
 
-                SustainabilityProgressCard(profile: vm.profile)
-                    .padding(.horizontal)
-
+                    SustainabilityProgressCard(profile: vm.profile)
+                        .padding(.horizontal)
+                }
+                .padding(.top, 10)
             }
-            .padding(.top, 10)
         }
     }
 }

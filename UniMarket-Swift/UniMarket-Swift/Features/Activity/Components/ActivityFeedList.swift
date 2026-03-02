@@ -15,18 +15,19 @@ struct ActivityFeedList: View {
             ForEach(items, id: \.self) { item in
                 HStack(alignment: .top, spacing: 10) {
                     Circle()
-                        .fill(Color.green.opacity(0.35))
+                        .fill(AppTheme.accent.opacity(0.35))
                         .frame(width: 10, height: 10)
                         .padding(.top, 6)
 
                     Text(item)
-                        .font(.subheadline)
+                        .font(.poppinsRegular(14))
+                        .foregroundStyle(AppTheme.primaryText)
 
                     Spacer()
                 }
                 .padding()
-                .background(Color.gray.opacity(0.10))
-                .cornerRadius(16)
+                .background(Color.white)
+                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
             }
         }
         .padding(.top, 8)

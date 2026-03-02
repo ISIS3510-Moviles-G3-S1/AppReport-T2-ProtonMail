@@ -10,21 +10,29 @@ import SwiftUI
 struct FeaturedProductCard: View {
     var body: some View {
         ZStack(alignment: .topTrailing) {
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                .fill(.white)
+                .frame(height: 320)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 22, style: .continuous)
+                        .fill(AppTheme.background)
+                        .padding(2)
+                )
 
-            RoundedRectangle(cornerRadius: 20)
-                .fill(Color.gray.opacity(0.15))
-                .frame(height: 300)
-
-            VStack(alignment: .trailing, spacing: 4) {
+            VStack(alignment: .trailing, spacing: 2) {
                 Text("$18")
-                    .bold()
+                    .font(.poppinsBold(34))
+                    .foregroundStyle(.black)
+
                 Text("Like New ✓")
-                    .font(.caption)
+                    .font(.poppinsSemiBold(14))
+                    .foregroundStyle(.black.opacity(0.9))
             }
-            .padding()
-            .background(Color.green.opacity(0.7))
-            .cornerRadius(12)
-            .padding()
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+            .background(AppTheme.accent)
+            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .padding(14)
         }
     }
 }
