@@ -30,14 +30,6 @@ struct ProfileView: View {
                 SustainabilityProgressCard(profile: vm.profile)
                     .padding(.horizontal)
 
-                Picker("", selection: $vm.selectedTab) {
-                    ForEach(ProfileViewModel.Tab.allCases, id: \.self) { tab in
-                        Text(tab.rawValue).tag(tab)
-                    }
-                }
-                .pickerStyle(.segmented)
-                .padding(.horizontal)
-
             }
             .padding(.top, 10)
         }

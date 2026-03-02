@@ -7,8 +7,11 @@
 
 import SwiftUI
 
-enum MainTab: Hashable {
-    case home, search, activity, profile
+enum MainTab {
+    case home
+    case search
+    case activity
+    case profile
 }
 
 struct MainTabView: View {
@@ -16,22 +19,26 @@ struct MainTabView: View {
     @State private var showUpload = false
 
     var body: some View {
-        contentView
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .overlay(alignment: .bottom) {
+        TabHost(selectedTab: $selectedTab, showUpload: $showUpload)
+            .safeAreaInset(edge: .bottom, spacing: 0) {
                 CustomTabBar(
                     selectedTab: $selectedTab,
                     onTapUpload: { showUpload = true }
                 )
+                .padding(.horizontal, 16)
+                .padding(.bottom, 8) // si la quieres MÁS abajo, pon 0
             }
-            .ignoresSafeArea(.keyboard, edges: .bottom)
             .sheet(isPresented: $showUpload) {
                 NavigationStack { UploadProductView() }
             }
     }
+}
 
-    @ViewBuilder
-    private var contentView: some View {
+private struct TabHost: View {
+    @Binding var selectedTab: MainTab
+    @Binding var showUpload: Bool
+
+    var body: some View {
         switch selectedTab {
         case .home:
             NavigationStack {
@@ -39,33 +46,28 @@ struct MainTabView: View {
                     onBrowseItems: { selectedTab = .search },
                     onStartSelling: { showUpload = true }
                 )
-                .padding(.bottom, 88)
             }
         case .search:
-            NavigationStack { SearchView().padding(.bottom, 88) }
+            NavigationStack { SearchView() }
         case .activity:
-            NavigationStack { ActivityView().padding(.bottom, 88) }
+            NavigationStack { ActivityView() }
         case .profile:
-            NavigationStack { ProfileView().padding(.bottom, 88) }
+            NavigationStack { ProfileView() }
         }
     }
 }
 
-// MARK: - Custom Tab Bar
 struct CustomTabBar: View {
     @Binding var selectedTab: MainTab
     let onTapUpload: () -> Void
 
     var body: some View {
         ZStack {
-            // Fondo de la barra
             RoundedRectangle(cornerRadius: 18)
                 .fill(.background)
                 .shadow(radius: 10)
                 .frame(height: 64)
-                .padding(.horizontal, 16)
 
-            // Botones laterales
             HStack {
                 tabButton(.home, icon: "house")
                 Spacer()
@@ -77,9 +79,8 @@ struct CustomTabBar: View {
                 Spacer()
                 tabButton(.profile, icon: "person")
             }
-            .padding(.horizontal, 36)
+            .padding(.horizontal, 20)
 
-            // Botón central flotante
             Button {
                 onTapUpload()
             } label: {
@@ -95,9 +96,8 @@ struct CustomTabBar: View {
                         .font(.system(size: 22, weight: .bold))
                 }
             }
-            .offset(y: -18)
+            .offset(y: -18) // prueba -10 si lo quieres menos “alto”
         }
-        .padding(.bottom, 8)
     }
 
     private func tabButton(_ tab: MainTab, icon: String) -> some View {
