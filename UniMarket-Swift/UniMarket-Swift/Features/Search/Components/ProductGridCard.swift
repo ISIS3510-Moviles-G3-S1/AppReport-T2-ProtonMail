@@ -10,36 +10,39 @@ import SwiftUI
 struct ProductGridCard: View {
     let product: Product
     let onTapFavorite: () -> Void
+    let onTapCard: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             ZStack(alignment: .topLeading) {
                 RoundedRectangle(cornerRadius: 18)
-                    .fill(Color.gray.opacity(0.15))
+                    .fill(AppTheme.background)
                     .frame(height: 180)
                     .overlay(
-                        Image(systemName: product.imageName)
-                            .font(.system(size: 40))
-                            .foregroundColor(.gray.opacity(0.6))
+                        Image(product.imageName)
+                            .resizable()
+                            .scaledToFill()
+                            .frame(height: 180)
+                            .frame(maxWidth: .infinity)
+                            .clipped()
+                            .clipShape(RoundedRectangle(cornerRadius: 18))
                     )
 
-                // Tag condición
                 Text(product.conditionTag)
-                    .font(.caption2).bold()
+                    .font(.poppinsSemiBold(10))
                     .padding(.horizontal, 10)
                     .padding(.vertical, 6)
-                    .background(Color.white.opacity(0.9))
-                    .cornerRadius(14)
+                    .background(Color.white.opacity(0.95))
+                    .clipShape(Capsule())
                     .padding(10)
 
-                // Corazón
                 HStack {
                     Spacer()
                     Button(action: onTapFavorite) {
                         Image(systemName: product.isFavorite ? "heart.fill" : "heart")
-                            .font(.system(size: 16, weight: .semibold))
+                            .font(.poppinsSemiBold(16))
                             .padding(10)
-                            .background(Color.white.opacity(0.9))
+                            .background(Color.white.opacity(0.95))
                             .clipShape(Circle())
                     }
                     .buttonStyle(.plain)
@@ -48,30 +51,35 @@ struct ProductGridCard: View {
             }
 
             Text(product.title)
-                .font(.subheadline)
-                .fontWeight(.semibold)
+                .font(.poppinsSemiBold(14))
+                .foregroundStyle(AppTheme.primaryText)
                 .lineLimit(1)
 
             HStack {
                 Text("$\(product.price)")
-                    .fontWeight(.bold)
+                    .font(.poppinsBold(15))
+                    .foregroundStyle(AppTheme.primaryText)
                 Spacer()
                 HStack(spacing: 4) {
                     Image(systemName: "star.fill")
                         .font(.caption)
                     Text(String(format: "%.1f", product.rating))
-                        .font(.caption)
+                        .font(.poppinsRegular(12))
                 }
-                .foregroundColor(.secondary)
+                .foregroundStyle(AppTheme.secondaryText)
             }
 
             Text(product.sellerName)
-                .font(.caption)
-                .foregroundColor(.secondary)
+                .font(.poppinsRegular(12))
+                .foregroundStyle(AppTheme.secondaryText)
         }
         .padding(10)
         .background(Color.white)
-        .cornerRadius(18)
-        .shadow(radius: 4)
+        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .shadow(color: .black.opacity(0.08), radius: 4)
+        .contentShape(Rectangle())
+        .onTapGesture {
+            onTapCard()
+        }
     }
 }

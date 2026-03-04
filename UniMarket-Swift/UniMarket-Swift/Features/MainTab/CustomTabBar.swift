@@ -12,8 +12,8 @@ struct CustomTabBar: View {
     var body: some View {
         ZStack {
             RoundedRectangle(cornerRadius: 18)
-                .fill(.background)
-                .shadow(radius: 10)
+                .fill(.white)
+                .shadow(color: .black.opacity(0.12), radius: 10)
                 .frame(height: 64)
 
             HStack {
@@ -34,14 +34,15 @@ struct CustomTabBar: View {
             } label: {
                 ZStack {
                     Circle()
-                        .fill(.background)
-                        .shadow(radius: 10)
+                        .fill(.white)
+                        .shadow(color: .black.opacity(0.12), radius: 10)
                         .frame(width: 64, height: 64)
                     Circle()
-                        .fill(Color.green.opacity(0.30))
+                        .fill(AppTheme.accent.opacity(0.40))
                         .frame(width: 56, height: 56)
                     Image(systemName: "plus")
-                        .font(.system(size: 22, weight: .bold))
+                        .font(.poppinsBold(22))
+                        .foregroundStyle(AppTheme.primaryText)
                 }
             }
             .offset(y: -18)
@@ -53,8 +54,8 @@ struct CustomTabBar: View {
             selectedTab = tab
         } label: {
             Image(systemName: icon)
-                .font(.system(size: 20))
-                .foregroundStyle(selectedTab == tab ? .primary : .secondary)
+                .font(.poppinsSemiBold(20))
+                .foregroundStyle(selectedTab == tab ? AppTheme.primaryText : AppTheme.secondaryText)
                 .frame(width: 44, height: 44)
         }
         .buttonStyle(.plain)

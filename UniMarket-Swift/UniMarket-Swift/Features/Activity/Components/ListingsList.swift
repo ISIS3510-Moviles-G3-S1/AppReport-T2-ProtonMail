@@ -9,16 +9,16 @@ import SwiftUI
 
 struct ListingsList: View {
     let listings: [Listing]
-    let onEdit: (Listing) -> Void
     let onDelete: (Listing) -> Void
+    let onTapDetail: (Listing) -> Void
 
     var body: some View {
         VStack(spacing: 14) {
             ForEach(listings) { listing in
                 ListingCard(
                     listing: listing,
-                    onEdit: { onEdit(listing) },
-                    onDelete: { onDelete(listing) }
+                    onDelete: { onDelete(listing) },
+                    onTapDetail: { onTapDetail(listing) }
                 )
             }
         }

@@ -20,55 +20,59 @@ struct SustainabilityProgressCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("SUSTAINABILITY LEVEL")
-                        .font(.caption2)
-                        .foregroundColor(.secondary)
+                        .font(.poppinsRegular(10))
+                        .foregroundStyle(AppTheme.secondaryText)
                     Text(profile.levelTitle)
-                        .font(.headline)
+                        .font(.poppinsSemiBold(15))
+                        .foregroundStyle(AppTheme.primaryText)
                 }
                 Spacer()
                 VStack(alignment: .trailing, spacing: 4) {
                     Text("Next up")
-                        .font(.caption2)
-                        .foregroundColor(.secondary)
+                        .font(.poppinsRegular(10))
+                        .foregroundStyle(AppTheme.secondaryText)
                     Text(profile.nextLevelTitle)
-                        .font(.headline)
+                        .font(.poppinsSemiBold(15))
                         .multilineTextAlignment(.trailing)
+                        .foregroundStyle(AppTheme.primaryText)
                     Text("\(profile.xpToNext) XP to go")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
+                        .font(.poppinsRegular(12))
+                        .foregroundStyle(AppTheme.secondaryText)
                 }
             }
 
-            ZStack(alignment: .leading) {
-                RoundedRectangle(cornerRadius: 8)
-                    .fill(Color.gray.opacity(0.2))
-                    .frame(height: 12)
+            GeometryReader { proxy in
+                ZStack(alignment: .leading) {
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(AppTheme.background)
+                        .frame(height: 12)
 
-                RoundedRectangle(cornerRadius: 8)
-                    .fill(Color.green.opacity(0.7))
-                    .frame(width: max(12, CGFloat(progress) * 280), height: 12)
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(AppTheme.accent.opacity(0.8))
+                        .frame(width: max(12, CGFloat(progress) * proxy.size.width), height: 12)
+                }
             }
+            .frame(height: 12)
 
             HStack {
                 Text("\(profile.levelMinXP) XP")
                 Spacer()
                 Text("\(profile.xp) XP")
-                    .fontWeight(.semibold)
+                    .font(.poppinsSemiBold(12))
                 Spacer()
                 Text("\(profile.levelMaxXP) XP")
             }
-            .font(.caption)
-            .foregroundColor(.secondary)
+            .font(.poppinsRegular(12))
+            .foregroundStyle(AppTheme.secondaryText)
         }
         .padding(14)
         .background(
             RoundedRectangle(cornerRadius: 18)
-                .fill(.background)
-                .shadow(radius: 6)
+                .fill(.white)
+                .shadow(color: .black.opacity(0.08), radius: 6)
         )
     }
 }

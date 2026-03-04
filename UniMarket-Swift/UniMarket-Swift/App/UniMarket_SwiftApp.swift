@@ -10,12 +10,15 @@ import SwiftUI
 @main
 struct UniMarket_SwiftApp: App {
     @StateObject private var session = SessionManager()
+    @StateObject private var chatStore = ChatStore()
 
     var body: some Scene {
         WindowGroup {
             RootView()
                 .environmentObject(session)
+                .environmentObject(chatStore)
+                .tint(AppTheme.accent)
+                .font(.poppinsRegular(16))
         }
     }
 }
-

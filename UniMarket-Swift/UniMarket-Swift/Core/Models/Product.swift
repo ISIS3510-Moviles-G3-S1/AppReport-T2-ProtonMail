@@ -13,6 +13,7 @@ struct Product: Identifiable, Hashable {
     let price: Int
     let sellerName: String
     let conditionTag: String
+    let tags: [String]
     let rating: Double
     var isFavorite: Bool
     let imageName: String

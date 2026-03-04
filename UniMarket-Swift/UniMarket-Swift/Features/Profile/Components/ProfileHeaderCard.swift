@@ -14,37 +14,40 @@ struct ProfileHeaderCard: View {
         HStack(spacing: 14) {
             ZStack {
                 Circle()
-                    .fill(Color.green.opacity(0.25))
+                    .fill(AppTheme.accent.opacity(0.25))
                     .frame(width: 56, height: 56)
-                Image(systemName: "person.fill")
-                    .foregroundColor(.green)
+                Image("Profile")
+                    .resizable()
+                    .scaledToFit() // shows the full photo
+                    .frame(width: 56, height: 56)
+                    .clipShape(Circle())
             }
 
             VStack(alignment: .leading, spacing: 6) {
                 Text(profile.name)
-                    .font(.headline)
+                    .font(.poppinsSemiBold(20))
+                    .foregroundStyle(AppTheme.primaryText)
 
                 Text("\(profile.university) • Member since \(profile.memberSince)")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
+                    .font(.poppinsRegular(12))
+                    .foregroundStyle(AppTheme.secondaryText)
 
                 HStack(spacing: 10) {
                     HStack(spacing: 4) {
                         Image(systemName: "star.fill")
                         Text(String(format: "%.1f", profile.rating))
                     }
-                    .font(.caption)
-                    .foregroundColor(.secondary)
+                    .font(.poppinsRegular(12))
+                    .foregroundStyle(AppTheme.secondaryText)
 
                     Text("• \(profile.transactions) transactions")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
+                        .font(.poppinsRegular(12))
+                        .foregroundStyle(AppTheme.secondaryText)
                 }
 
                 Text("\(profile.xp) XP Points")
-                    .font(.subheadline)
-                    .fontWeight(.semibold)
-                    .foregroundColor(.green)
+                    .font(.poppinsSemiBold(15))
+                    .foregroundStyle(AppTheme.accent)
                     .padding(.top, 2)
             }
 
@@ -53,8 +56,8 @@ struct ProfileHeaderCard: View {
         .padding(14)
         .background(
             RoundedRectangle(cornerRadius: 18)
-                .fill(.background)
-                .shadow(radius: 6)
+                .fill(.white)
+                .shadow(color: .black.opacity(0.08), radius: 6)
         )
     }
 }
