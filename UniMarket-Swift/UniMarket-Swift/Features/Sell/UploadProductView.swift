@@ -31,22 +31,22 @@ struct UploadProductView: View {
                     header
                     photoSection
 
-                    labeledTextField(title: "Título", placeholder: "Ej: Chaqueta vintage", text: $vm.title)
+                    labeledTextField(title: "Title", placeholder: "Ex: Vintage Jacket", text: $vm.title)
 
-                    labeledTextField(title: "Precio", placeholder: "Ej: 18000", text: $vm.price)
+                    labeledTextField(title: "Price", placeholder: "Ex: 18000", text: $vm.price)
                         .keyboardType(.numberPad)
 
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("Condición")
+                        Text("Condition")
                             .font(.poppinsSemiBold(16))
-                        Picker("Condición", selection: $vm.condition) {
+                        Picker("Condition", selection: $vm.condition) {
                             ForEach(conditions, id: \.self) { Text($0).tag($0) }
                         }
                         .pickerStyle(.segmented)
                     }
 
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("Descripción")
+                        Text("Description")
                             .font(.poppinsSemiBold(16))
                         TextEditor(text: $vm.description)
                             .font(.poppinsRegular(15))
@@ -71,7 +71,7 @@ struct UploadProductView: View {
                         HStack {
                             Spacer()
                             if vm.isPosting { ProgressView().padding(.trailing, 6) }
-                            Text(vm.isPosting ? "Publicando..." : "Publicar")
+                            Text(vm.isPosting ? "Publishing..." : "Publish")
                                 .font(.poppinsSemiBold(16))
                                 .foregroundStyle(AppTheme.primaryText)
                             Spacer()
@@ -102,11 +102,11 @@ struct UploadProductView: View {
 
     private var header: some View {
         HStack {
-            Text("Subir producto")
+            Text("Upload product")
                 .font(.poppinsBold(24))
                 .foregroundStyle(AppTheme.primaryText)
             Spacer()
-            Button("Cerrar") { dismiss() }
+            Button("Close") { dismiss() }
                 .font(.poppinsRegular(14))
                 .foregroundStyle(AppTheme.secondaryText)
         }
@@ -114,7 +114,7 @@ struct UploadProductView: View {
 
     private var photoSection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Fotos")
+            Text("Pictures")
                 .font(.poppinsSemiBold(16))
 
             HStack(spacing: 12) {
@@ -125,7 +125,7 @@ struct UploadProductView: View {
                 ) {
                     HStack(spacing: 10) {
                         Image(systemName: "photo.on.rectangle")
-                        Text("Galería")
+                        Text("Gallery")
                             .font(.poppinsRegular(14))
                         Spacer()
                         Text("\(vm.selectedItems.count)/5")
@@ -143,7 +143,7 @@ struct UploadProductView: View {
                 } label: {
                     HStack(spacing: 10) {
                         Image(systemName: "camera")
-                        Text("Cámara")
+                        Text("Camera")
                             .font(.poppinsRegular(14))
                     }
                     .frame(maxWidth: .infinity)
@@ -181,7 +181,7 @@ struct UploadProductView: View {
                     }
                 }
             } else {
-                Text("Selecciona hasta 5 fotos o toma una con la cámara.")
+                Text("Select 5 photos or upload them.")
                     .font(.poppinsRegular(12))
                     .foregroundStyle(AppTheme.secondaryText)
             }
