@@ -21,55 +21,22 @@ final class ProductDetailViewModel: ObservableObject {
     @Published var conditionText: String
     @Published var isFavorite: Bool
 
-    private var sourceListing: Listing?
+    private var sourceProduct: Product?
 
-    private init(
-        summary: ItemSummary,
-        sellerName: String,
-        conditionText: String,
-        rating: Double?,
-        isFavorite: Bool,
-        isOwnListing: Bool,
-        description: String,
-        sourceListing: Listing?
-    ) {
-        self.id = summary.id
-        self.title = summary.title
-        self.price = summary.price
-        self.imageName = summary.imageName
-        self.sellerName = sellerName
-        self.conditionText = conditionText
-        self.rating = rating
-        self.isFavorite = isFavorite
+    init(product: Product, isOwnListing: Bool = false) {
+        self.id = product.id
+        self.title = product.title
+        self.price = product.price
+        self.imageName = product.imageName
+        self.sellerName = product.sellerName
+        self.conditionText = isOwnListing ? product.status.rawValue : product.conditionTag
+        self.rating = isOwnListing ? nil : product.rating
+        self.isFavorite = product.isFavorite
         self.isOwnListing = isOwnListing
-        self.description = description
-        self.sourceListing = sourceListing
-    }
-
-    convenience init(product: Product) {
-        self.init(
-            summary: product.itemSummary,
-            sellerName: product.sellerName,
-            conditionText: product.conditionTag,
-            rating: product.rating,
-            isFavorite: product.isFavorite,
-            isOwnListing: false,
-            description: "Pre-loved item in \(product.conditionTag.lowercased()) condition. Perfect for campus life and sustainable fashion.",
-            sourceListing: nil
-        )
-    }
-
-    convenience init(listing: Listing) {
-        self.init(
-            summary: listing.itemSummary,
-            sellerName: "Your listing",
-            conditionText: listing.status.rawValue,
-            rating: nil,
-            isFavorite: false,
-            isOwnListing: true,
-            description: "Manage your listing details, update price, and keep your item information up to date.",
-            sourceListing: listing
-        )
+        self.description = product.description.isEmpty
+            ? "Pre-loved item in \(product.conditionTag.lowercased()) condition. Perfect for campus life and sustainable fashion."
+            : product.description
+        self.sourceProduct = isOwnListing ? product : nil
     }
 
     func toggleFavorite() {
@@ -77,12 +44,12 @@ final class ProductDetailViewModel: ObservableObject {
         isFavorite.toggle()
     }
 
-    func editableListing() -> Listing? {
-        sourceListing
+    func editableProduct() -> Product? {
+        sourceProduct
     }
 
-    func applyListingUpdate(_ updated: Listing) {
-        sourceListing = updated
+    func applyProductUpdate(_ updated: Product) {
+        sourceProduct = updated
         title = updated.title
         price = updated.price
         conditionText = updated.status.rawValue

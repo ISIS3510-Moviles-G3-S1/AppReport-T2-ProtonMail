@@ -9,7 +9,7 @@ import SwiftUI
 
 struct ActivityView: View {
     @StateObject private var vm = ActivityViewModel()
-    @State private var selectedListing: Listing?
+    @State private var selectedListing: Product?
     @State private var selectedLikedProduct: Product?
 
     var body: some View {
@@ -49,8 +49,8 @@ struct ActivityView: View {
                 .padding(.top, 10)
             }
         }
-        .navigationDestination(item: $selectedListing) { listing in
-            ProductDetailView(listing: listing, onListingUpdated: { updated in
+        .navigationDestination(item: $selectedListing) { product in
+            ProductDetailView(product: product, isOwnListing: true, onProductUpdated: { updated in
                 vm.updateListing(updated)
                 selectedListing = updated
             })
@@ -123,11 +123,11 @@ struct ActivityView: View {
 
     private var listingsSection: some View {
         VStack(spacing: 14) {
-            ForEach(vm.listings) { listing in
+            ForEach(vm.listings) { product in
                 ListingCard(
-                    listing: listing,
-                    onDelete: { vm.deleteListing(listing) },
-                    onTapDetail: { selectedListing = listing }
+                    product: product,
+                    onDelete: { vm.deleteListing(product) },
+                    onTapDetail: { selectedListing = product }
                 )
             }
         }

@@ -11,19 +11,14 @@ struct ProductDetailView: View {
     @EnvironmentObject private var chatStore: ChatStore
 
     @StateObject private var vm: ProductDetailViewModel
-    @State private var editingListing: Listing?
+    @State private var editingProduct: Product?
     @State private var chatConversationID: String?
 
-    private let onListingUpdated: ((Listing) -> Void)?
+    private let onProductUpdated: ((Product) -> Void)?
 
-    init(product: Product) {
-        _vm = StateObject(wrappedValue: ProductDetailViewModel(product: product))
-        self.onListingUpdated = nil
-    }
-
-    init(listing: Listing, onListingUpdated: ((Listing) -> Void)? = nil) {
-        _vm = StateObject(wrappedValue: ProductDetailViewModel(listing: listing))
-        self.onListingUpdated = onListingUpdated
+    init(product: Product, isOwnListing: Bool = false, onProductUpdated: ((Product) -> Void)? = nil) {
+        _vm = StateObject(wrappedValue: ProductDetailViewModel(product: product, isOwnListing: isOwnListing))
+        self.onProductUpdated = onProductUpdated
     }
 
     var body: some View {
@@ -96,14 +91,14 @@ struct ProductDetailView: View {
         }
         .navigationTitle("Product Details")
         .navigationBarTitleDisplayMode(.inline)
-        .sheet(item: $editingListing) { listing in
+        .sheet(item: $editingProduct) { product in
             EditListingView(
-                listing: listing,
-                onCancel: { editingListing = nil },
+                product: product,
+                onCancel: { editingProduct = nil },
                 onSave: { updated in
-                    vm.applyListingUpdate(updated)
-                    onListingUpdated?(updated)
-                    editingListing = nil
+                    vm.applyProductUpdate(updated)
+                    onProductUpdated?(updated)
+                    editingProduct = nil
                 }
             )
         }
@@ -136,7 +131,7 @@ struct ProductDetailView: View {
     private var actionButtons: some View {
         if vm.isOwnListing {
             Button("Edit Listing") {
-                editingListing = vm.editableListing()
+                editingProduct = vm.editableProduct()
             }
             .font(.poppinsSemiBold(16))
             .foregroundStyle(AppTheme.primaryText)

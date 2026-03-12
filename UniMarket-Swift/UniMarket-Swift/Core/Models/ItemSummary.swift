@@ -21,14 +21,3 @@ extension Product: ItemSummarizable {
         )
     }
 }
-
-extension Listing: ItemSummarizable {
-    var itemSummary: ItemSummary {
-        ItemSummary(
-            id: id,
-            title: title,
-            price: price,
-            imageName: imageName
-        )
-    }
-}
