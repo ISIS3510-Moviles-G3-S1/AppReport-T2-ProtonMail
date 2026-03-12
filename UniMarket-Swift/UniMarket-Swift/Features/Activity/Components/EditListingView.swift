@@ -10,21 +10,21 @@ import SwiftUI
 struct EditListingView: View {
     @Environment(\.dismiss) private var dismiss
 
-    let listing: Listing
+    let product: Product
     let onCancel: () -> Void
-    let onSave: (Listing) -> Void
+    let onSave: (Product) -> Void
 
     @State private var title: String
     @State private var priceText: String
-    @State private var status: ListingStatus
+    @State private var status: ProductStatus
 
-    init(listing: Listing, onCancel: @escaping () -> Void, onSave: @escaping (Listing) -> Void) {
-        self.listing = listing
+    init(product: Product, onCancel: @escaping () -> Void, onSave: @escaping (Product) -> Void) {
+        self.product = product
         self.onCancel = onCancel
         self.onSave = onSave
-        _title = State(initialValue: listing.title)
-        _priceText = State(initialValue: String(listing.price))
-        _status = State(initialValue: listing.status)
+        _title = State(initialValue: product.title)
+        _priceText = State(initialValue: String(product.price))
+        _status = State(initialValue: product.status)
     }
 
     var body: some View {
@@ -37,7 +37,7 @@ struct EditListingView: View {
                         .keyboardType(.numberPad)
 
                     Picker("Estado", selection: $status) {
-                        ForEach(ListingStatus.allCases) { s in
+                        ForEach(ProductStatus.allCases) { s in
                             Text(s.rawValue).tag(s)
                         }
                     }
@@ -46,10 +46,10 @@ struct EditListingView: View {
                 Section {
                     Button {
                         let cleanTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)
-                        let price = Int(priceText) ?? listing.price
+                        let price = Int(priceText) ?? product.price
 
-                        var updated = listing
-                        updated.title = cleanTitle.isEmpty ? listing.title : cleanTitle
+                        var updated = product
+                        updated.title = cleanTitle.isEmpty ? product.title : cleanTitle
                         updated.price = price
                         updated.status = status
 

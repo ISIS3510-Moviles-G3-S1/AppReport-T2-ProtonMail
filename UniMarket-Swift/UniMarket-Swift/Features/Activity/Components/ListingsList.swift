@@ -8,17 +8,17 @@
 import SwiftUI
 
 struct ListingsList: View {
-    let listings: [Listing]
-    let onDelete: (Listing) -> Void
-    let onTapDetail: (Listing) -> Void
+    let listings: [Product]
+    let onDelete: (Product) -> Void
+    let onTapDetail: (Product) -> Void
 
     var body: some View {
         VStack(spacing: 14) {
-            ForEach(listings) { listing in
+            ForEach(listings) { product in
                 ListingCard(
-                    listing: listing,
-                    onDelete: { onDelete(listing) },
-                    onTapDetail: { onTapDetail(listing) }
+                    product: product,
+                    onDelete: { onDelete(product) },
+                    onTapDetail: { onTapDetail(product) }
                 )
             }
         }

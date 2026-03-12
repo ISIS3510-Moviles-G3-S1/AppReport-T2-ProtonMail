@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct ListingCard: View {
-    let listing: Listing
+    let product: Product
     let onDelete: () -> Void
     let onTapDetail: () -> Void
 
@@ -21,7 +21,7 @@ struct ListingCard: View {
                             .fill(AppTheme.background)
                             .frame(height: 180)
                             .overlay(
-                                Image(listing.imageName)
+                                Image(product.imageName)
                                     .resizable()
                                     .font(.poppinsSemiBold(44))
                                     .foregroundStyle(AppTheme.secondaryText)
@@ -33,21 +33,21 @@ struct ListingCard: View {
                                 
                             )
 
-                        Text(listing.status.rawValue)
+                        Text(product.status.rawValue)
                             .font(.poppinsSemiBold(10))
                             .padding(.horizontal, 10)
                             .padding(.vertical, 6)
-                            .background(badgeColor(listing.status).opacity(0.35))
+                            .background(badgeColor(product.status).opacity(0.35))
                             .clipShape(Capsule())
                             .padding(10)
                     }
 
-                    Text(listing.title)
+                    Text(product.title)
                         .font(.poppinsSemiBold(16))
                         .foregroundStyle(AppTheme.primaryText)
                         .lineLimit(2)
 
-                    Text("$\(listing.price)")
+                    Text("$\(product.price)")
                         .font(.poppinsSemiBold(16))
                         .foregroundStyle(AppTheme.accent)
                 }
@@ -76,7 +76,7 @@ struct ListingCard: View {
         )
     }
 
-    private func badgeColor(_ status: ListingStatus) -> Color {
+    private func badgeColor(_ status: ProductStatus) -> Color {
         switch status {
         case .active: return AppTheme.accent
         case .paused: return .orange
