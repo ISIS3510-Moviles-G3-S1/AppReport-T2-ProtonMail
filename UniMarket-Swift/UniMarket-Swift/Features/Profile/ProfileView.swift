@@ -35,6 +35,25 @@ struct ProfileView: View {
                     SustainabilityProgressCard(profile: vm.profile)
                         .padding(.horizontal)
 
+                    HStack(spacing: 12) {
+                        ProfileMetricCard(
+                            title: "Listings made",
+                            value: vm.monthlyProductStats.listingsCreated,
+                            subtitle: "Products posted from your current listings data.",
+                            systemImage: "plus.square.fill",
+                            tint: AppTheme.accent
+                        )
+
+                        ProfileMetricCard(
+                            title: "Clothes sold",
+                            value: vm.monthlyProductStats.itemsSold,
+                            subtitle: "Items marked as sold in the last month.",
+                            systemImage: "checkmark.seal.fill",
+                            tint: AppTheme.accentAlt
+                        )
+                    }
+                    .padding(.horizontal)
+
                     VStack(alignment: .leading, spacing: 10) {
                         Text("Recent Activity")
                             .font(.poppinsSemiBold(16))
