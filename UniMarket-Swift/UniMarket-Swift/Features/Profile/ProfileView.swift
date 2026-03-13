@@ -9,6 +9,8 @@ import SwiftUI
 
 struct ProfileView: View {
     @StateObject private var vm = ProfileViewModel()
+    @EnvironmentObject var session: SessionManager
+    @State private var showLogoutConfirm = false
 
     var body: some View {
         ZStack {
@@ -53,9 +55,37 @@ struct ProfileView: View {
                             .shadow(color: .black.opacity(0.05), radius: 4)
                     )
                     .padding(.horizontal)
+
+                    Button {
+                        showLogoutConfirm = true
+                    } label: {
+                        HStack {
+                            Image(systemName: "rectangle.portrait.and.arrow.right")
+                            Text("Log Out")
+                                .font(.poppinsSemiBold(16))
+                        }
+                        .foregroundStyle(.red)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 14)
+                        .background(
+                            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                .fill(.white)
+                                .shadow(color: .black.opacity(0.05), radius: 4)
+                        )
+                    }
+                    .padding(.horizontal)
+                    .padding(.bottom, 24)
                 }
                 .padding(.top, 10)
             }
+        }
+        .confirmationDialog("Are you sure you want to log out?",
+                            isPresented: $showLogoutConfirm,
+                            titleVisibility: .visible) {
+            Button("Log Out", role: .destructive) {
+                try? session.signOut()
+            }
+            Button("Cancel", role: .cancel) {}
         }
     }
 }

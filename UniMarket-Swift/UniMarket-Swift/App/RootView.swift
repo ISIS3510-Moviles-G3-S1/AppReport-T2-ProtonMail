@@ -7,27 +7,39 @@
 
 import SwiftUI
 
+private enum AuthRoute: Hashable {
+    case register
+}
+
 struct RootView: View {
     @EnvironmentObject var session: SessionManager
+    @State private var authPath: [AuthRoute] = []
 
     var body: some View {
         GeometryReader { proxy in
             Group {
-                if session.isLoggedIn {
+                if session.isLoading {
+                    LoadingView()
+                } else if session.isLoggedIn {
                     MainTabView()
                 } else {
-                    LoginView()
+                    NavigationStack(path: $authPath) {
+                        LoginView(onRegisterTap: { authPath.append(.register) })
+                            .navigationDestination(for: AuthRoute.self) { route in
+                                switch route {
+                                case .register:
+                                    RegisterView()
+                                }
+                            }
+                    }
+                }
+            }
+            .onChange(of: session.isLoggedIn) { _, loggedIn in
+                if loggedIn {
+                    authPath = []
                 }
             }
             .frame(width: proxy.size.width, height: proxy.size.height)
         }
     }
-}
-
-#Preview("Logged In") {
-    let session = SessionManager()
-    session.isLoggedIn = true
-
-    return RootView()
-        .environmentObject(session)
 }
