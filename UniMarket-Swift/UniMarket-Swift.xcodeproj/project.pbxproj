@@ -22,7 +22,7 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		0D51C4902F57AE4B00029628 /* Exceptions for "UniMarket-Swift" folder in "UniMarket-Swift" target */ = {
+		64A58A1B2F66321A00FF6FB9 /* Exceptions for "UniMarket-Swift" folder in "UniMarket-Swift" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
@@ -35,7 +35,7 @@
 		0D3FB4192F54AA9F009E56A4 /* UniMarket-Swift */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				0D51C4902F57AE4B00029628 /* Exceptions for "UniMarket-Swift" folder in "UniMarket-Swift" target */,
+				64A58A1B2F66321A00FF6FB9 /* Exceptions for "UniMarket-Swift" folder in "UniMarket-Swift" target */,
 			);
 			path = "UniMarket-Swift";
 			sourceTree = "<group>";

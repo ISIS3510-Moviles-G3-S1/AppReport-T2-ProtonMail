@@ -11,6 +11,9 @@ struct ProfileView: View {
     @StateObject private var vm = ProfileViewModel()
     @EnvironmentObject var session: SessionManager
     @State private var showLogoutConfirm = false
+    @State private var showImagePicker = false
+    @State private var showImageSourceSelection = false
+    @State private var imageSource: ImagePicker.Source = .photoLibrary
 
     var body: some View {
         ZStack {
@@ -24,8 +27,10 @@ struct ProfileView: View {
                         .foregroundStyle(AppTheme.accent)
                         .padding(.horizontal)
 
-                    ProfileHeaderCard(profile: vm.profile)
-                        .padding(.horizontal)
+                    ProfileHeaderCard(profile: vm.profile) {
+                        showImageSourceSelection = true
+                    }
+                    .padding(.horizontal)
 
                     Divider().padding(.horizontal)
 
@@ -35,36 +40,32 @@ struct ProfileView: View {
                     SustainabilityProgressCard(profile: vm.profile)
                         .padding(.horizontal)
 
-                    HStack(spacing: 12) {
-                        ProfileMetricCard(
-                            title: "Listings made",
-                            value: vm.monthlyProductStats.listingsCreated,
-                            subtitle: "Products posted from your current listings data.",
-                            systemImage: "plus.square.fill",
-                            tint: AppTheme.accent
-                        )
-
-                        ProfileMetricCard(
-                            title: "Clothes sold",
-                            value: vm.monthlyProductStats.itemsSold,
-                            subtitle: "Items marked as sold in the last month.",
-                            systemImage: "checkmark.seal.fill",
-                            tint: AppTheme.accentAlt
-                        )
-                    }
-                    .padding(.horizontal)
-
+                    // TODO: Implement Recent Activity DB Integration
+                    /*
+                     Future Implementation Plan:
+                     1. Create 'activities' collection in Firestore
+                     2. Create Activity model with:
+                        - id: String
+                        - type: enum (sale, purchase, xp_gain, listing)
+                        - title: String
+                        - description: String
+                        - date: Date
+                        - icon: String
+                     3. Add ActivityService to fetch recent activities for user
+                     4. Update ProfileViewModel to expose [Activity] instead of [String]
+                     */
                     VStack(alignment: .leading, spacing: 10) {
-                        Text("Recent Activity")
+                        Text("Recent Activity (Mock)")
                             .font(.poppinsSemiBold(16))
                             .foregroundStyle(AppTheme.primaryText)
 
                         VStack(alignment: .leading, spacing: 8) {
-                            Label("Sold shirt and won 5 XP", systemImage: "tshirt.fill")
-                            Label("Posted a new tote bag listing", systemImage: "bag.fill")
+                            ForEach(vm.activity, id: \.self) { act in
+                                Label(act, systemImage: "star.fill") // Placeholder icon
+                                    .font(.poppinsRegular(13))
+                                    .foregroundStyle(AppTheme.secondaryText)
+                            }
                         }
-                        .font(.poppinsRegular(13))
-                        .foregroundStyle(AppTheme.secondaryText)
                     }
                     .padding(14)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -96,6 +97,24 @@ struct ProfileView: View {
                     .padding(.bottom, 24)
                 }
                 .padding(.top, 10)
+            }
+        }
+        .confirmationDialog("Change Profile Picture", isPresented: $showImageSourceSelection) {
+            Button("Camera") {
+                imageSource = .camera
+                showImagePicker = true
+            }
+            Button("Photo Library") {
+                imageSource = .photoLibrary
+                showImagePicker = true
+            }
+            Button("Cancel", role: .cancel) {}
+        }
+        .sheet(isPresented: $showImagePicker) {
+            ImagePicker(source: imageSource) { image in
+                Task {
+                    await vm.uploadProfileImage(image)
+                }
             }
         }
         .confirmationDialog("Are you sure you want to log out?",

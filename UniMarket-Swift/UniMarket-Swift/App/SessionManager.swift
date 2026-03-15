@@ -57,7 +57,11 @@ final class SessionManager: ObservableObject {
             "displayName": displayName,
             "email": email,
             "createdAt": FieldValue.serverTimestamp(),
-            "isVerified": false
+            "isVerified": false,
+            "numTransactions": 0,
+            "ratingStars": 0.0,
+            "profilePic": "" ,// Placeholder, can be updated later with actual profile picture URL
+            "xpPoints": 0
         ])
 
         try await result.user.sendEmailVerification()
