@@ -20,6 +20,8 @@ struct UploadProductView: View {
 
     private let conditions = ["Good", "Like New"]
     private let columns = [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())]
+    private let cardBackground = Color.white
+    private let borderColor = Color.black.opacity(0.08)
 
     var body: some View {
         ZStack {
@@ -39,21 +41,33 @@ struct UploadProductView: View {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Condition")
                             .font(.poppinsSemiBold(16))
+                            .foregroundStyle(AppTheme.primaryText)
+
                         Picker("Condition", selection: $vm.condition) {
                             ForEach(conditions, id: \.self) { Text($0).tag($0) }
                         }
                         .pickerStyle(.segmented)
+                        .colorScheme(.light)
                     }
 
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Description")
                             .font(.poppinsSemiBold(16))
+                            .foregroundStyle(AppTheme.primaryText)
+
                         TextEditor(text: $vm.description)
                             .font(.poppinsRegular(15))
+                            .foregroundStyle(AppTheme.primaryText)
+                            .scrollContentBackground(.hidden)
                             .frame(height: 120)
                             .padding(10)
-                            .background(Color.white)
+                            .background(cardBackground)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                    .stroke(borderColor, lineWidth: 1)
+                            )
                             .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                            .colorScheme(.light)
                     }
 
                     if let msg = vm.errorMessage {
@@ -70,7 +84,11 @@ struct UploadProductView: View {
                     } label: {
                         HStack {
                             Spacer()
-                            if vm.isPosting { ProgressView().padding(.trailing, 6) }
+                            if vm.isPosting {
+                                ProgressView()
+                                    .tint(AppTheme.primaryText)
+                                    .padding(.trailing, 6)
+                            }
                             Text(vm.isPosting ? "Publishing..." : "Publish")
                                 .font(.poppinsSemiBold(16))
                                 .foregroundStyle(AppTheme.primaryText)
@@ -88,6 +106,7 @@ struct UploadProductView: View {
                 .padding(.bottom, 20)
             }
         }
+        .colorScheme(.light)
         .onChange(of: vm.selectedItems) { _, _ in
             Task {
                 await vm.loadSelectedPhotos()
@@ -116,6 +135,7 @@ struct UploadProductView: View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Pictures")
                 .font(.poppinsSemiBold(16))
+                .foregroundStyle(AppTheme.primaryText)
 
             HStack(spacing: 12) {
                 PhotosPicker(
@@ -125,15 +145,21 @@ struct UploadProductView: View {
                 ) {
                     HStack(spacing: 10) {
                         Image(systemName: "photo.on.rectangle")
+                            .foregroundStyle(AppTheme.primaryText)
                         Text("Gallery")
                             .font(.poppinsRegular(14))
+                            .foregroundStyle(AppTheme.primaryText)
                         Spacer()
                         Text("\(vm.selectedItems.count)/5")
                             .font(.poppinsRegular(12))
                             .foregroundStyle(AppTheme.secondaryText)
                     }
                     .padding()
-                    .background(Color.white)
+                    .background(cardBackground)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .stroke(borderColor, lineWidth: 1)
+                    )
                     .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                 }
                 .buttonStyle(.plain)
@@ -143,12 +169,18 @@ struct UploadProductView: View {
                 } label: {
                     HStack(spacing: 10) {
                         Image(systemName: "camera")
+                            .foregroundStyle(AppTheme.primaryText)
                         Text("Camera")
                             .font(.poppinsRegular(14))
+                            .foregroundStyle(AppTheme.primaryText)
                     }
                     .frame(maxWidth: .infinity)
                     .padding()
-                    .background(Color.white)
+                    .background(cardBackground)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .stroke(borderColor, lineWidth: 1)
+                    )
                     .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                 }
                 .buttonStyle(.plain)
@@ -192,11 +224,20 @@ struct UploadProductView: View {
         VStack(alignment: .leading, spacing: 8) {
             Text(title)
                 .font(.poppinsSemiBold(16))
+                .foregroundStyle(AppTheme.primaryText)
+
             TextField(placeholder, text: text)
                 .font(.poppinsRegular(15))
+                .foregroundStyle(AppTheme.primaryText)
+                .tint(AppTheme.primaryText)
                 .padding(12)
-                .background(Color.white)
+                .background(cardBackground)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .stroke(borderColor, lineWidth: 1)
+                )
                 .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .colorScheme(.light)
         }
     }
 }

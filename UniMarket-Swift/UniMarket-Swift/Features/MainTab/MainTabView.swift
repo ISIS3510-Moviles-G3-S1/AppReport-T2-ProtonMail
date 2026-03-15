@@ -35,7 +35,7 @@ struct MainTabView: View {
                 .frame(width: proxy.size.width - (sidePadding * 2), height: barHeight)
                 .position(
                     x: proxy.size.width / 2,
-                    y: proxy.size.height - (barHeight / 2) - proxy.safeAreaInsets.bottom - bottomSpacing
+                    y: proxy.size.height - (barHeight / 2) - bottomSpacing
                 )
             }
             .frame(width: proxy.size.width, height: proxy.size.height)
