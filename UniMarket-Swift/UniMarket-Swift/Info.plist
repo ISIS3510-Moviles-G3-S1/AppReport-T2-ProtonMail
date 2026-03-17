@@ -8,5 +8,11 @@
 		<string>Poppins-Regular.ttf</string>
 		<string>Poppins-Bold.ttf</string>
 	</array>
+	<key>NSCameraUsageDescription</key>
+	<string>We need access to your camera to analyze clothing items</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>We need access to your photos to analyze clothing items</string>
+	<key>CLARIFAI_API_KEY</key>
+	<string>YOUR_KEY_HERE</string>
 </dict>
 </plist>
