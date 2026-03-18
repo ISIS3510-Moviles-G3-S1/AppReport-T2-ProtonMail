@@ -2,6 +2,7 @@
 xcuserdata/
 
 # Sensitive Configuration Files
+**/Config.xcconfig
 Config.xcconfig
 .env
 .env.local

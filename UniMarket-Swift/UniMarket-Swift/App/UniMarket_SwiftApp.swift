@@ -13,7 +13,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
     func application(_ application: UIApplication,
                      didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
         FirebaseApp.configure()
-
+        
         // Firebase Auth persistence is .local by default — the session is stored
         // in the device keychain and survives app restarts, so users won't be
         // forced to log in every time. To change this behaviour:
@@ -30,7 +30,7 @@ struct UniMarket_SwiftApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) private var delegate
     @StateObject private var session = SessionManager()
     @StateObject private var chatStore = ChatStore()
-
+    
     var body: some Scene {
         WindowGroup {
             RootView()

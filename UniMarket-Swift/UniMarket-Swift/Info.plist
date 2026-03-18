@@ -3,20 +3,22 @@
 <plist version="1.0">
 <dict>
 	<key>NSCameraUsageDescription</key>
-	<string>We need access to your camera to take a profile picture.</string>
+	<string>We need access to your camera to analyze clothing items</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>We need access to your photo library to select a profile picture.</string>
+	<string>We need access to your photos to analyze clothing items</string>
 	<key>UIAppFonts</key>
 	<array>
 		<string>Poppins-SemiBold.ttf</string>
 		<string>Poppins-Regular.ttf</string>
 		<string>Poppins-Bold.ttf</string>
 	</array>
-	<key>NSCameraUsageDescription</key>
-	<string>We need access to your camera to analyze clothing items</string>
-	<key>NSPhotoLibraryUsageDescription</key>
-	<string>We need access to your photos to analyze clothing items</string>
 	<key>CLARIFAI_API_KEY</key>
 	<string>$(CLARIFAI_API_KEY)</string>
+	<key>CLARIFAI_USER_ID</key>
+	<string>$(CLARIFAI_USER_ID)</string>
+	<key>CLARIFAI_APP_ID</key>
+	<string>$(CLARIFAI_APP_ID)</string>
+	<key>APPAREL_MODEL_ID</key>
+	<string>$(APPAREL_MODEL_ID)</string>
 </dict>
 </plist>
