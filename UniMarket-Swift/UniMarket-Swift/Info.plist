@@ -17,6 +17,6 @@
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>We need access to your photos to analyze clothing items</string>
 	<key>CLARIFAI_API_KEY</key>
-	<string>frurh9ng9ov0a</string>
+	<string>$(CLARIFAI_API_KEY)</string>
 </dict>
 </plist>

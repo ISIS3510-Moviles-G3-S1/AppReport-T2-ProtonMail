@@ -1,0 +1,17 @@
+// Config.xcconfig.example
+// This is an example configuration file for sensitive API keys and secrets
+// 
+// INSTRUCTIONS:
+// 1. Copy this file and name it "Config.xcconfig" (without .example)
+// 2. Replace the placeholder values with your actual API keys
+// 3. Config.xcconfig will be ignored by git (see .gitignore)
+// 4. Never commit Config.xcconfig or any real API keys to version control
+
+// Clarifai API Configuration
+CLARIFAI_API_KEY = YOUR_ACTUAL_CLARIFAI_API_KEY_HERE
+CLARIFAI_BASE_URL = https://api.clarifai.com/v2
+APPAREL_MODEL_ID = e0be3b9d6a454f0493ac3a30784001ff
+
+// Other API Keys (add as needed)
+// FIREBASE_API_KEY = YOUR_FIREBASE_API_KEY
+// STRIPE_KEY = YOUR_STRIPE_KEY
