@@ -101,7 +101,7 @@ struct ClothingAnalysisView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.white)
         .sheet(isPresented: $showImagePicker) {
-            ImagePicker(
+            ClothingAnalysisImagePicker(
                 isPresented: $showImagePicker,
                 image: $viewModel.selectedImage,
                 sourceType: imagePickerSource == .camera ? .camera : .photoLibrary,
@@ -321,7 +321,7 @@ struct ClothingAnalysisView: View {
         }
         .backgroundColor(AppTheme.background)
         .sheet(isPresented: $showImagePicker) {
-            ImagePicker(
+            ClothingAnalysisImagePicker(
                 isPresented: $showImagePicker,
                 image: $viewModel.selectedImage,
                 sourceType: imagePickerSource == .camera ? .camera : .photoLibrary,
@@ -398,7 +398,7 @@ struct ClothingAnalysisView: View {
 }
 
 // MARK: - Image Picker
-struct ImagePicker: UIViewControllerRepresentable {
+struct ClothingAnalysisImagePicker: UIViewControllerRepresentable {
     @Binding var isPresented: Bool
     @Binding var image: UIImage?
     var sourceType: UIImagePickerController.SourceType
