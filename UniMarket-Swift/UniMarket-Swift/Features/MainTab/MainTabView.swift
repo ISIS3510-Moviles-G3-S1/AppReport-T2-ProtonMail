@@ -17,6 +17,7 @@ enum MainTab: Hashable {
 struct MainTabView: View {
     @State private var selectedTab: MainTab = .home
     @State private var showUpload = false
+    @StateObject private var profileViewModel = ProfileViewModel()
 
     private let barHeight: CGFloat = 64
     private let sidePadding: CGFloat = 16
@@ -44,6 +45,12 @@ struct MainTabView: View {
         .sheet(isPresented: $showUpload) {
             NavigationStack { UploadProductView() }
         }
+        .onChange(of: selectedTab) { _, newTab in
+            guard newTab == .profile else { return }
+            Task {
+                await profileViewModel.onProfileTabSelected()
+            }
+        }
     }
 
     @ViewBuilder
@@ -61,7 +68,7 @@ struct MainTabView: View {
         case .activity:
             NavigationStack { ActivityView() }
         case .profile:
-            NavigationStack { ProfileView() }
+            NavigationStack { ProfileView(viewModel: profileViewModel) }
         }
     }
 }

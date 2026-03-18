@@ -8,12 +8,16 @@
 import SwiftUI
 
 struct ProfileView: View {
-    @StateObject private var vm = ProfileViewModel()
+    @StateObject private var vm: ProfileViewModel
     @EnvironmentObject var session: SessionManager
     @State private var showLogoutConfirm = false
     @State private var showImagePicker = false
     @State private var showImageSourceSelection = false
     @State private var imageSource: ImagePicker.Source = .photoLibrary
+
+    init(viewModel: ProfileViewModel = ProfileViewModel()) {
+        _vm = StateObject(wrappedValue: viewModel)
+    }
 
     var body: some View {
         ZStack {
