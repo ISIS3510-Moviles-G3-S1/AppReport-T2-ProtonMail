@@ -17,6 +17,7 @@ struct UploadProductView: View {
     @StateObject private var vm = UploadProductViewModel()
 
     @State private var showCamera = false
+    @State private var showClothingAnalysis = false
 
     private let conditions = ["Good", "Like New"]
     private let columns = [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())]
@@ -98,6 +99,9 @@ struct UploadProductView: View {
                 vm.addImageFromCamera(uiImage)
             }
         }
+        .navigationDestination(isPresented: $showClothingAnalysis) {
+            ClothingAnalysisView()
+        }
     }
 
     private var header: some View {
@@ -149,6 +153,22 @@ struct UploadProductView: View {
                     .frame(maxWidth: .infinity)
                     .padding()
                     .background(Color.white)
+
+                Button {
+                    showClothingAnalysis = true
+                } label: {
+                    HStack(spacing: 10) {
+                        Image(systemName: "sparkles")
+                        Text("AI Analyze")
+                            .font(.poppinsRegular(14))
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(AppTheme.accentAlt.opacity(0.2))
+                    .foregroundStyle(AppTheme.accentAlt)
+                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                }
+                .buttonStyle(.plain)
                     .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                 }
                 .buttonStyle(.plain)

@@ -42,7 +42,9 @@ struct MainTabView: View {
         }
         .ignoresSafeArea(.keyboard, edges: .bottom)
         .sheet(isPresented: $showUpload) {
-            NavigationStack { UploadProductView() }
+            NavigationStack { 
+                UploadProductView()
+            }
         }
     }
 
