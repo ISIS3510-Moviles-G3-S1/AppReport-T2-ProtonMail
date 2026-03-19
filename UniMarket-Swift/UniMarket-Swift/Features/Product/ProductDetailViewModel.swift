@@ -12,6 +12,7 @@ final class ProductDetailViewModel: ObservableObject {
     let id: String
     let sellerName: String
     let imageName: String
+    let imageURL: String?
     let rating: Double?
     let description: String
     let isOwnListing: Bool
@@ -28,6 +29,7 @@ final class ProductDetailViewModel: ObservableObject {
         self.title = product.title
         self.price = product.price
         self.imageName = product.imageName
+        self.imageURL = product.primaryImageURL
         self.sellerName = product.sellerName
         self.conditionText = isOwnListing ? product.status.rawValue : product.conditionTag
         self.rating = isOwnListing ? nil : product.rating

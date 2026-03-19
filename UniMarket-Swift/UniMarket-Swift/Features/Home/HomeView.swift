@@ -9,6 +9,7 @@ import SwiftUI
 
 struct HomeView: View {
     @EnvironmentObject private var chatStore: ChatStore
+    @EnvironmentObject private var productStore: ProductStore
 
     let onBrowseItems: () -> Void
     let onStartSelling: () -> Void
@@ -27,7 +28,7 @@ struct HomeView: View {
                         onStartSelling: onStartSelling
                     )
 
-                    FeaturedProductCard()
+                    FeaturedProductCard(product: productStore.activeProducts.first)
                 }
                 .padding(.horizontal, 16)
                 .padding(.top, 16)

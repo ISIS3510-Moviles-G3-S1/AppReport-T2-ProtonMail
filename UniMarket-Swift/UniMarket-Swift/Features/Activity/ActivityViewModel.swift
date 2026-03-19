@@ -16,20 +16,25 @@ final class ActivityViewModel: ObservableObject {
 
     @Published var selectedTab: Tab = .likes
 
-    @Published var likedProducts: [Product] = [
-        Product(id: "1", title: "Striped Linen Shirt", price: 16, sellerName: "Kai O.", conditionTag: "Good", tags: ["tops", "linen", "casual"], rating: 4.6, isFavorite: true, imageName: "Shirt"),
-        Product(id: "3", title: "Canvas Tote Bag", price: 12, sellerName: "Mila R.", conditionTag: "Like New", tags: ["bags", "campus", "minimal"], rating: 4.8, isFavorite: true, imageName: "ToteBag"),
-        Product(id: "4", title: "Black & White Print", price: 9, sellerName: "Sam P.", conditionTag: "Good", tags: ["accessories", "print", "vintage"], rating: 4.2, isFavorite: true, imageName: "Puffer")
-    ]
+    @Published var likedProducts: [Product] = []
 
-    @Published var listings: [Product] = [
-        Product(id: "1", title: "Vintage Levi’s Denim Jacket", price: 25, sellerName: "Your listing", conditionTag: "Good", tags: ["outerwear", "denim"], imageName: "Puffer", description: "Classic denim jacket in great condition.", status: .active),
-        Product(id: "2", title: "Cream Knit Sweater", price: 20, sellerName: "Your listing", conditionTag: "Good", tags: ["knitwear"], imageName: "Shirt", description: "Soft knit sweater for everyday campus wear.", status: .active),
-        Product(id: "3", title: "Canvas Tote Bag", price: 12, sellerName: "Your listing", conditionTag: "Like New", tags: ["bags"], imageName: "ToteBag", description: "Spacious tote bag with minimal wear.", status: .paused)
-    ]
+    @Published var listings: [Product] = []
 
     func removeSavedProduct(_ product: Product) {
         likedProducts.removeAll { $0.id == product.id }
+    }
+
+    func sync(products: [Product], currentUserID: String?) {
+        likedProducts = products.filter(\.isFavorite)
+
+        guard let currentUserID else {
+            listings = []
+            return
+        }
+
+        listings = products
+            .filter { $0.sellerId == currentUserID }
+            .sorted { $0.createdAt > $1.createdAt }
     }
 
     func deleteListing(_ product: Product) {

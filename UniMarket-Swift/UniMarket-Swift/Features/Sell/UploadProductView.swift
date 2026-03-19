@@ -14,6 +14,7 @@ import UIKit
 
 struct UploadProductView: View {
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject private var productStore: ProductStore
     @StateObject private var vm = UploadProductViewModel()
 
     @State private var showCamera = false
@@ -64,8 +65,10 @@ struct UploadProductView: View {
 
                     Button {
                         Task {
-                            await vm.postMock()
-                            dismiss()
+                            let didPublish = await vm.postProduct(using: productStore)
+                            if didPublish {
+                                dismiss()
+                            }
                         }
                     } label: {
                         HStack {

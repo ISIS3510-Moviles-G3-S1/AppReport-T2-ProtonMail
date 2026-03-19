@@ -20,18 +20,7 @@ struct ListingCard: View {
                         RoundedRectangle(cornerRadius: 18)
                             .fill(AppTheme.background)
                             .frame(height: 180)
-                            .overlay(
-                                Image(product.imageName)
-                                    .resizable()
-                                    .font(.poppinsSemiBold(44))
-                                    .foregroundStyle(AppTheme.secondaryText)
-                                    .scaledToFit()
-                                    .frame(height: 180) // adjust per design
-                                    .frame(maxWidth: .infinity)
-                                    .clipped()
-                                    .clipShape(RoundedRectangle(cornerRadius: 18))
-                                
-                            )
+                            .overlay(productImage)
 
                         Text(product.status.rawValue)
                             .font(.poppinsSemiBold(10))
@@ -81,6 +70,27 @@ struct ListingCard: View {
         case .active: return AppTheme.accent
         case .paused: return .orange
         case .sold: return .gray
+        }
+    }
+
+    @ViewBuilder
+    private var productImage: some View {
+        if let imageURL = product.primaryImageURL, !imageURL.isEmpty {
+            AsyncImageView(urlString: imageURL, cacheKey: imageURL)
+                .frame(height: 180)
+                .frame(maxWidth: .infinity)
+                .clipped()
+                .clipShape(RoundedRectangle(cornerRadius: 18))
+        } else {
+            Image(product.imageName)
+                .resizable()
+                .font(.poppinsSemiBold(44))
+                .foregroundStyle(AppTheme.secondaryText)
+                .scaledToFit()
+                .frame(height: 180)
+                .frame(maxWidth: .infinity)
+                .clipped()
+                .clipShape(RoundedRectangle(cornerRadius: 18))
         }
     }
 }
