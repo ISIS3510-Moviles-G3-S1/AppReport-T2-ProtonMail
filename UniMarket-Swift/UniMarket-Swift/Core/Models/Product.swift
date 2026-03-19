@@ -9,6 +9,7 @@ import Foundation
 
 struct Product: Identifiable, Hashable, Codable {
     let id: String
+    let sellerId: String
     var title: String
     var price: Int
     let sellerName: String
@@ -21,10 +22,16 @@ struct Product: Identifiable, Hashable, Codable {
     let createdAt: Date
     let soldAt: Date?
     let imagePath: String?
+    let imageURLs: [String]
     var status: ProductStatus
+
+    var primaryImageURL: String? {
+        imageURLs.first ?? imagePath
+    }
 
     init(
         id: String,
+        sellerId: String = "",
         title: String,
         price: Int,
         sellerName: String = "Unknown seller",
@@ -37,9 +44,11 @@ struct Product: Identifiable, Hashable, Codable {
         createdAt: Date = .now,
         soldAt: Date? = nil,
         imagePath: String? = nil,
+        imageURLs: [String] = [],
         status: ProductStatus = .active
     ) {
         self.id = id
+        self.sellerId = sellerId
         self.title = title
         self.price = price
         self.sellerName = sellerName
@@ -52,6 +61,7 @@ struct Product: Identifiable, Hashable, Codable {
         self.createdAt = createdAt
         self.soldAt = soldAt
         self.imagePath = imagePath
+        self.imageURLs = imageURLs
         self.status = status
     }
 }

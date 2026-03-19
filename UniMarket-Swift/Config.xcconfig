@@ -1,0 +1,14 @@
+// INSTRUCTIONS:
+//
+// 1. Replace the placeholder values with your actual API keys
+
+// Clarifai API Configuration
+CLARIFAI_API_KEY = fe51cfa7def14d37ab0ca8b7d4288fbd
+CLARIFAI_USER_ID = clarifai
+CLARIFAI_APP_ID = main
+APPAREL_MODEL_ID = general-image-recognition
+//e0be3b9d6a454f0493ac3a30784001ff
+
+// Other API Keys (add as needed)
+// FIREBASE_API_KEY = YOUR_FIREBASE_API_KEY
+// STRIPE_KEY = YOUR_STRIPE_KEY
