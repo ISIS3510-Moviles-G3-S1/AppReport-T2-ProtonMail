@@ -19,4 +19,5 @@ struct UserProfile {
     var xpToNext: Int
     var levelMinXP: Int
     var levelMaxXP: Int
+    var profilePicURL: String
 }

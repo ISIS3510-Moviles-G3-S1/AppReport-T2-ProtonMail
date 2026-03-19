@@ -9,18 +9,24 @@ import SwiftUI
 
 struct ProfileHeaderCard: View {
     let profile: UserProfile
+    let onEditImage: () -> Void
 
     var body: some View {
         HStack(spacing: 14) {
-            ZStack {
-                Circle()
-                    .fill(AppTheme.accent.opacity(0.25))
-                    .frame(width: 56, height: 56)
-                Image("Profile")
-                    .resizable()
-                    .scaledToFit() // shows the full photo
+            ZStack(alignment: .bottomTrailing) {
+                AsyncImageView(urlString: profile.profilePicURL, cacheKey: profile.profilePicURL)
                     .frame(width: 56, height: 56)
                     .clipShape(Circle())
+                    .overlay(Circle().stroke(Color.gray.opacity(0.2), lineWidth: 1))
+
+                Button(action: onEditImage) {
+                    Image(systemName: "pencil.circle.fill")
+                        .symbolRenderingMode(.multicolor)
+                        .foregroundStyle(AppTheme.accent)
+                        .background(Color.white.clipShape(Circle()))
+                        .font(.system(size: 18))
+                }
+                .offset(x: 4, y: 4)
             }
 
             VStack(alignment: .leading, spacing: 6) {
