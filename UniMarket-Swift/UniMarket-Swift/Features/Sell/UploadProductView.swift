@@ -14,7 +14,6 @@ import UIKit
 
 struct UploadProductView: View {
     @Environment(\.dismiss) private var dismiss
-    @EnvironmentObject private var productStore: ProductStore
     @StateObject private var vm = UploadProductViewModel()
 
     @State private var showCamera = false
@@ -80,10 +79,8 @@ struct UploadProductView: View {
 
                     Button {
                         Task {
-                            let didPublish = await vm.postProduct(using: productStore)
-                            if didPublish {
-                                dismiss()
-                            }
+                            await vm.postMock()
+                            dismiss()
                         }
                     } label: {
                         HStack {
@@ -144,57 +141,53 @@ struct UploadProductView: View {
                 .font(.poppinsSemiBold(16))
                 .foregroundStyle(AppTheme.primaryText)
 
-            VStack(spacing: 12) {
-                HStack(spacing: 12) {
-                    PhotosPicker(
-                        selection: $vm.selectedItems,
-                        maxSelectionCount: 5,
-                        matching: .images
-                    ) {
-                        HStack(spacing: 10) {
-                            Image(systemName: "photo.on.rectangle")
-                                .foregroundStyle(AppTheme.primaryText)
-                            Text("Gallery")
-                                .font(.poppinsRegular(14))
-                                .foregroundStyle(AppTheme.primaryText)
-                            Spacer()
-                            Text("\(vm.selectedItems.count)/5")
-                                .font(.poppinsRegular(12))
-                                .foregroundStyle(AppTheme.secondaryText)
-                        }
-                        .padding()
-                        .background(cardBackground)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                .stroke(borderColor, lineWidth: 1)
-                        )
-                        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            HStack(spacing: 12) {
+                PhotosPicker(
+                    selection: $vm.selectedItems,
+                    maxSelectionCount: 5,
+                    matching: .images
+                ) {
+                    HStack(spacing: 10) {
+                        Image(systemName: "photo.on.rectangle")
+                            .foregroundStyle(AppTheme.primaryText)
+                        Text("Gallery")
+                            .font(.poppinsRegular(14))
+                            .foregroundStyle(AppTheme.primaryText)
+                        Spacer()
+                        Text("\(vm.selectedItems.count)/5")
+                            .font(.poppinsRegular(12))
+                            .foregroundStyle(AppTheme.secondaryText)
                     }
-                    .buttonStyle(.plain)
-                    .frame(maxWidth: .infinity)
-
-                    Button {
-                        showCamera = true
-                    } label: {
-                        HStack(spacing: 10) {
-                            Image(systemName: "camera")
-                                .foregroundStyle(AppTheme.primaryText)
-                            Text("Camera")
-                                .font(.poppinsRegular(14))
-                                .foregroundStyle(AppTheme.primaryText)
-                        }
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(Color.white)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                .stroke(borderColor, lineWidth: 1)
-                        )
-                        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-                    }
-                    .buttonStyle(.plain)
-                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(cardBackground)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .stroke(borderColor, lineWidth: 1)
+                    )
+                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                 }
+                .buttonStyle(.plain)
+
+                Button {
+                    showCamera = true
+                } label: {
+                    HStack(spacing: 10) {
+                        Image(systemName: "camera")
+                            .foregroundStyle(AppTheme.primaryText)
+                        Text("Camera")
+                            .font(.poppinsRegular(14))
+                            .foregroundStyle(AppTheme.primaryText)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(Color.white)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .stroke(borderColor, lineWidth: 1)
+                    )
+                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                }
+                .buttonStyle(.plain)
 
                 Button {
                     showClothingAnalysis = true

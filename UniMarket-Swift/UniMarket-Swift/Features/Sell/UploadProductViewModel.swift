@@ -88,67 +88,23 @@ final class UploadProductViewModel: ObservableObject {
         Int(price) != nil
     }
 
-    func postProduct(using productStore: ProductStore) async -> Bool {
-        guard canPost, let parsedPrice = Int(price) else { return false }
+    func postMock() async {
+        guard canPost else { return }
+        await MainActor.run { isPosting = true }
+        defer { Task { await MainActor.run { self.isPosting = false } } }
+
+        try? await Task.sleep(nanoseconds: 900_000_000)
 
         await MainActor.run {
-            isPosting = true
+            selectedItems = []
+            selectedImages = []
+            imagesData = []
+            title = ""
+            price = ""
+            condition = "Good"
+            description = ""
             errorMessage = nil
         }
-
-        defer {
-            Task { @MainActor in
-                self.isPosting = false
-            }
-        }
-
-        do {
-            let imageURLs = try await uploadListingImages()
-            let input = CreateProductInput(
-                title: title.trimmingCharacters(in: .whitespacesAndNewlines),
-                price: parsedPrice,
-                conditionTag: condition,
-                description: description.trimmingCharacters(in: .whitespacesAndNewlines),
-                imageURLs: imageURLs
-            )
-
-            _ = try await productStore.createProduct(input: input)
-            resetForm()
-            return true
-        } catch {
-            await MainActor.run {
-                errorMessage = error.localizedDescription
-            }
-            return false
-        }
-    }
-
-    private func uploadListingImages() async throws -> [String] {
-        let listingID = UUID().uuidString
-        var uploadedURLs: [String] = []
-
-        for (index, data) in imagesData.enumerated() {
-            guard let uiImage = UIImage(data: data) else {
-                throw ImageUploadError.compressionFailed
-            }
-
-            let url = try await ImageUploadService.uploadListingImage(uiImage, listingId: listingID, index: index)
-            uploadedURLs.append(url)
-        }
-
-        return uploadedURLs
-    }
-
-    @MainActor
-    private func resetForm() {
-        selectedItems = []
-        selectedImages = []
-        imagesData = []
-        title = ""
-        price = ""
-        condition = "Good"
-        description = ""
-        errorMessage = nil
     }
 }
 

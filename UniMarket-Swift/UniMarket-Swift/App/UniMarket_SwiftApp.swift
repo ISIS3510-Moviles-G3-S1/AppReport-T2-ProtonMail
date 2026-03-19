@@ -30,17 +30,12 @@ struct UniMarket_SwiftApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) private var delegate
     @StateObject private var session = SessionManager()
     @StateObject private var chatStore = ChatStore()
-
-
-    @StateObject private var productStore = ProductStore()
-
     
     var body: some Scene {
         WindowGroup {
             RootView()
                 .environmentObject(session)
                 .environmentObject(chatStore)
-                .environmentObject(productStore)
                 .tint(AppTheme.accent)
                 .font(.poppinsRegular(16))
         }

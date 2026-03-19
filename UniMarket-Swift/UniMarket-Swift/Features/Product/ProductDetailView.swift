@@ -9,7 +9,6 @@ import SwiftUI
 
 struct ProductDetailView: View {
     @EnvironmentObject private var chatStore: ChatStore
-    @EnvironmentObject private var productStore: ProductStore
 
     @StateObject private var vm: ProductDetailViewModel
     @State private var editingProduct: Product?
@@ -97,14 +96,9 @@ struct ProductDetailView: View {
                 product: product,
                 onCancel: { editingProduct = nil },
                 onSave: { updated in
-                    Task {
-                        try? await productStore.updateProduct(updated)
-                        await MainActor.run {
-                            vm.applyProductUpdate(updated)
-                            onProductUpdated?(updated)
-                            editingProduct = nil
-                        }
-                    }
+                    vm.applyProductUpdate(updated)
+                    onProductUpdated?(updated)
+                    editingProduct = nil
                 }
             )
         }
@@ -121,21 +115,14 @@ struct ProductDetailView: View {
                 .fill(Color.white)
                 .frame(height: 280)
 
-            if let imageURL = vm.imageURL, !imageURL.isEmpty {
-                AsyncImageView(urlString: imageURL, cacheKey: imageURL)
-                    .frame(height: 280)
-                    .frame(width: 300)
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
-            } else {
-                Image(vm.imageName)
-                    .font(.poppinsSemiBold(72))
-                    .foregroundStyle(AppTheme.secondaryText)
-                    .scaledToFit()
-                    .frame(height: 280)
-                    .frame(width: 300)
-                    .clipped()
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
-            }
+            Image(vm.imageName)
+                .font(.poppinsSemiBold(72))
+                .foregroundStyle(AppTheme.secondaryText)
+                .scaledToFit()
+                .frame(height: 280) // adjust per design
+                .frame(width: 300)
+                .clipped()
+                .clipShape(RoundedRectangle(cornerRadius: 12))
 
         }
     }

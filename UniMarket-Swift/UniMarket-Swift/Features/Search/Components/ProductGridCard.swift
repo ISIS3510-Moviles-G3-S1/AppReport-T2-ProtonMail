@@ -18,7 +18,15 @@ struct ProductGridCard: View {
                 RoundedRectangle(cornerRadius: 18)
                     .fill(AppTheme.background)
                     .frame(height: 180)
-                    .overlay(productImage)
+                    .overlay(
+                        Image(product.imageName)
+                            .resizable()
+                            .scaledToFill()
+                            .frame(height: 180)
+                            .frame(maxWidth: .infinity)
+                            .clipped()
+                            .clipShape(RoundedRectangle(cornerRadius: 18))
+                    )
 
                 Text(product.conditionTag)
                     .font(.poppinsSemiBold(10))
@@ -72,25 +80,6 @@ struct ProductGridCard: View {
         .contentShape(Rectangle())
         .onTapGesture {
             onTapCard()
-        }
-    }
-
-    @ViewBuilder
-    private var productImage: some View {
-        if let imageURL = product.primaryImageURL, !imageURL.isEmpty {
-            AsyncImageView(urlString: imageURL, cacheKey: imageURL)
-                .frame(height: 180)
-                .frame(maxWidth: .infinity)
-                .clipped()
-                .clipShape(RoundedRectangle(cornerRadius: 18))
-        } else {
-            Image(product.imageName)
-                .resizable()
-                .scaledToFill()
-                .frame(height: 180)
-                .frame(maxWidth: .infinity)
-                .clipped()
-                .clipShape(RoundedRectangle(cornerRadius: 18))
         }
     }
 }

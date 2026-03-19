@@ -8,7 +8,6 @@
 import SwiftUI
 
 struct SearchView: View {
-    @EnvironmentObject private var productStore: ProductStore
     @StateObject private var vm = SearchViewModel()
     @State private var selectedProduct: Product?
     @State private var showFilters = false
@@ -99,35 +98,22 @@ struct SearchView: View {
                     }
 
                     ScrollView {
-                        if productStore.isLoading && vm.products.isEmpty {
-                            ProgressView("Loading products...")
-                                .frame(maxWidth: .infinity)
-                                .padding(.top, 48)
-                        } else if vm.filteredProducts.isEmpty {
-                            Text("No products available yet.")
-                                .font(.poppinsRegular(14))
-                                .foregroundStyle(AppTheme.secondaryText)
-                                .frame(maxWidth: .infinity)
-                                .padding(.top, 48)
-                        } else {
-                            LazyVGrid(columns: columns, spacing: 12) {
-                                ForEach(vm.filteredProducts) { product in
-                                    ProductGridCard(
-                                        product: product,
-                                        onTapFavorite: {
-                                            productStore.toggleFavorite(for: product)
-                                            vm.toggleFavorite(for: product)
-                                        },
-                                        onTapCard: {
-                                            selectedProduct = product
-                                        }
-                                    )
-                                }
+                        LazyVGrid(columns: columns, spacing: 12) {
+                            ForEach(vm.filteredProducts) { product in
+                                ProductGridCard(
+                                    product: product,
+                                    onTapFavorite: {
+                                        vm.toggleFavorite(for: product)
+                                    },
+                                    onTapCard: {
+                                        selectedProduct = product
+                                    }
+                                )
                             }
-                            .padding(.horizontal)
-                            .padding(.top, 4)
-                            .padding(.bottom, 80)
                         }
+                        .padding(.horizontal)
+                        .padding(.top, 4)
+                        .padding(.bottom, 80)
                     }
                 }
 
@@ -151,12 +137,6 @@ struct SearchView: View {
             }
         }
         .animation(.easeInOut(duration: 0.22), value: showFilters)
-        .task {
-            vm.updateProducts(productStore.activeProducts)
-        }
-        .onReceive(productStore.$products) { products in
-            vm.updateProducts(products.filter { $0.status == .active }.sorted { $0.createdAt > $1.createdAt })
-        }
         .navigationDestination(item: $selectedProduct) { product in
             ProductDetailView(product: product)
         }
