@@ -13,6 +13,7 @@ struct ProfileMetricCard: View {
     let subtitle: String
     let systemImage: String
     let tint: Color
+    let contextLabel: String
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -23,7 +24,7 @@ struct ProfileMetricCard: View {
 
                 Spacer()
 
-                Text("Last 30 days")
+                Text(contextLabel)
                     .font(.poppinsRegular(10))
                     .foregroundStyle(AppTheme.secondaryText)
             }

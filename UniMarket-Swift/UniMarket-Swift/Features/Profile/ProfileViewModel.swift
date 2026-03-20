@@ -11,7 +11,32 @@ import FirebaseFirestore
 import FirebaseAuth
 
 final class ProfileViewModel: ObservableObject {
-    struct MonthlyProductStats {
+    enum MetricsRange: String, CaseIterable, Identifiable {
+        case week = "Last Week"
+        case month = "Last Month"
+        case allTime = "All Time"
+
+        var id: String { rawValue }
+
+        var label: String {
+            switch self {
+            case .week:
+                return "Last 7 days"
+            case .month:
+                return "Last 30 days"
+            case .allTime:
+                return "All time"
+            }
+        }
+    }
+
+    struct ProductStats {
+        let listingsCreated: Int
+        let itemsSold: Int
+    }
+
+    struct ProfileMetrics {
+        let activeListings: Int
         let listingsCreated: Int
         let itemsSold: Int
     }
@@ -33,6 +58,7 @@ final class ProfileViewModel: ObservableObject {
     @Published var profilePicURL: String = ""
 
     @Published var ecoMessage = "Welcome! Start selling items to earn XP and unlock new levels."
+    @Published var selectedMetricsRange: MetricsRange = .month
 
     @Published var activity: [String] = [
         "Nora liked your item \"Cream Knit Sweater\".",
@@ -40,49 +66,12 @@ final class ProfileViewModel: ObservableObject {
         "Kai sent you a message about \"Canvas Tote Bag\"."
     ]
 
-    @Published var listings: [Product] = [
-        Product(
-            id: "1",
-            title: "Vintage Levi's Denim Jacket",
-            price: 25,
-            sellerName: "Alex Lopez",
-            conditionTag: "Good",
-            tags: ["outerwear", "denim"],
-            imageName: "jacket",
-            description: "Classic denim jacket in great condition.",
-            createdAt: Calendar.current.date(byAdding: .day, value: -8, to: .now) ?? .now,
-            status: .active
-        ),
-        Product(
-            id: "2",
-            title: "Cream Knit Sweater",
-            price: 20,
-            sellerName: "Alex Lopez",
-            conditionTag: "Good",
-            tags: ["knitwear"],
-            imageName: "tshirt",
-            description: "Soft sweater with a relaxed fit.",
-            createdAt: Calendar.current.date(byAdding: .day, value: -20, to: .now) ?? .now,
-            soldAt: Calendar.current.date(byAdding: .day, value: -4, to: .now),
-            status: .sold
-        ),
-        Product(
-            id: "3",
-            title: "Canvas Tote Bag",
-            price: 12,
-            sellerName: "Alex Lopez",
-            conditionTag: "Like New",
-            tags: ["bags"],
-            imageName: "bag",
-            description: "Large tote bag with plenty of room.",
-            createdAt: Calendar.current.date(byAdding: .day, value: -45, to: .now) ?? .now,
-            status: .paused
-        )
-    ]
+    @Published var listings: [Product] = []
 
     @Published var editingListing: Product? = nil
 
     private var cancellables = Set<AnyCancellable>()
+    private var listingsListener: ListenerRegistration?
 
     private enum CacheKey {
         static let dynamicTransactions = "profile.dynamic.transactions"
@@ -177,6 +166,8 @@ final class ProfileViewModel: ObservableObject {
         transactions = user.numTransactions
         xp = user.xpPoints
         xpToNext = levelInfo.xpToNext
+
+        startObservingListings(for: user.id)
 
         let defaults = UserDefaults.standard
         defaults.set(user.ratingStars, forKey: CacheKey.dynamicRating)
@@ -288,20 +279,64 @@ final class ProfileViewModel: ObservableObject {
         }
     }
 
-    var monthlyProductStats: MonthlyProductStats {
+    private func cutoffDate(for range: MetricsRange) -> Date? {
         let calendar = Calendar.current
-        let cutoffDate = calendar.date(byAdding: .month, value: -1, to: .now) ?? .now
+        switch range {
+        case .week:
+            return calendar.date(byAdding: .day, value: -7, to: .now)
+        case .month:
+            return calendar.date(byAdding: .day, value: -30, to: .now)
+        case .allTime:
+            return nil
+        }
+    }
 
-        let listingsCreated = listings.filter { $0.createdAt >= cutoffDate }.count
+    func productStats(for range: MetricsRange) -> ProductStats {
+        let cutoffDate = cutoffDate(for: range)
+        let listingsCreated = listings.filter { product in
+            guard let cutoffDate else { return true }
+            return product.createdAt >= cutoffDate
+        }.count
         let itemsSold = listings.filter { product in
             guard let soldAt = product.soldAt else { return false }
+            guard let cutoffDate else { return true }
             return soldAt >= cutoffDate
         }.count
 
-        return MonthlyProductStats(
+        return ProductStats(
             listingsCreated: listingsCreated,
             itemsSold: itemsSold
         )
+    }
+
+    var profileMetrics: ProfileMetrics {
+        let stats = productStats(for: selectedMetricsRange)
+        return ProfileMetrics(
+            activeListings: listings.filter { $0.status == .active }.count,
+            listingsCreated: stats.listingsCreated,
+            itemsSold: stats.itemsSold
+        )
+    }
+
+    var selectedMetricsRangeLabel: String {
+        selectedMetricsRange.label
+    }
+
+    private func startObservingListings(for userID: String) {
+        listingsListener?.remove()
+        listingsListener = ProductService.shared.observeProducts { [weak self] result in
+            Task { @MainActor in
+                guard let self else { return }
+                switch result {
+                case .success(let products):
+                    self.listings = products
+                        .filter { $0.sellerId == userID }
+                        .sorted { $0.createdAt > $1.createdAt }
+                case .failure:
+                    self.listings = []
+                }
+            }
+        }
     }
 
     func deleteListing(_ product: Product) {
@@ -316,6 +351,10 @@ final class ProfileViewModel: ObservableObject {
         guard let idx = listings.firstIndex(where: { $0.id == updated.id }) else { return }
         listings[idx] = updated
         editingListing = nil
+    }
+
+    deinit {
+        listingsListener?.remove()
     }
 }
 //#Preview {

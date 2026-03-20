@@ -14,6 +14,10 @@ struct ProfileView: View {
     @State private var showImagePicker = false
     @State private var showImageSourceSelection = false
     @State private var imageSource: ImagePicker.Source = .photoLibrary
+    private let metricColumns = [
+        GridItem(.flexible(), spacing: 12),
+        GridItem(.flexible(), spacing: 12)
+    ]
 
     init(viewModel: ProfileViewModel = ProfileViewModel()) {
         _vm = StateObject(wrappedValue: viewModel)
@@ -50,6 +54,59 @@ struct ProfileView: View {
 
                     SustainabilityProgressCard(xp: vm.xp, xpToNext: vm.xpToNext)
                         .padding(.horizontal)
+
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Listing Metrics")
+                            .font(.poppinsSemiBold(16))
+                            .foregroundStyle(AppTheme.primaryText)
+
+                        Picker("Metrics Range", selection: $vm.selectedMetricsRange) {
+                            ForEach(ProfileViewModel.MetricsRange.allCases) { range in
+                                Text(range.rawValue).tag(range)
+                            }
+                        }
+                        .pickerStyle(.segmented)
+                    }
+                    .padding(.horizontal)
+
+                    LazyVGrid(columns: metricColumns, spacing: 12) {
+                        ProfileMetricCard(
+                            title: "Active Listings",
+                            value: vm.profileMetrics.activeListings,
+                            subtitle: "Listings currently visible in the marketplace.",
+                            systemImage: "hanger",
+                            tint: AppTheme.accent,
+                            contextLabel: "Live from Firebase"
+                        )
+
+                        ProfileMetricCard(
+                            title: "Items Sold",
+                            value: vm.profileMetrics.itemsSold,
+                            subtitle: "Items marked as sold during the selected period.",
+                            systemImage: "checkmark.seal.fill",
+                            tint: .green,
+                            contextLabel: vm.selectedMetricsRangeLabel
+                        )
+
+                        ProfileMetricCard(
+                            title: "Items Posted",
+                            value: vm.profileMetrics.listingsCreated,
+                            subtitle: "New listings created during the selected period.",
+                            systemImage: "plus.circle.fill",
+                            tint: .orange,
+                            contextLabel: vm.selectedMetricsRangeLabel
+                        )
+
+                        ProfileMetricCard(
+                            title: "Transactions",
+                            value: vm.transactions,
+                            subtitle: "Completed transactions from your user profile.",
+                            systemImage: "arrow.left.arrow.right.circle.fill",
+                            tint: .blue,
+                            contextLabel: "All time"
+                        )
+                    }
+                    .padding(.horizontal)
 
                     // TODO: Implement Recent Activity DB Integration
                     /*
