@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		646993862F6CC798005199FC /* MobileNetV2.mlmodel in Sources */ = {isa = PBXBuildFile; fileRef = 646993852F6CC798005199FC /* MobileNetV2.mlmodel */; };
 		64A588C52F65FF7300FF6FB9 /* FirebaseAI in Frameworks */ = {isa = PBXBuildFile; productRef = 64A588C42F65FF7300FF6FB9 /* FirebaseAI */; };
 		64A588C72F65FF7300FF6FB9 /* FirebaseAILogic in Frameworks */ = {isa = PBXBuildFile; productRef = 64A588C62F65FF7300FF6FB9 /* FirebaseAILogic */; };
 		64A588C92F65FF7300FF6FB9 /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = 64A588C82F65FF7300FF6FB9 /* FirebaseAnalytics */; };
@@ -19,6 +20,7 @@
 
 /* Begin PBXFileReference section */
 		0D3FB4172F54AA9F009E56A4 /* UniMarket-Swift.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "UniMarket-Swift.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		646993852F6CC798005199FC /* MobileNetV2.mlmodel */ = {isa = PBXFileReference; lastKnownFileType = file.mlmodel; path = MobileNetV2.mlmodel; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -67,6 +69,7 @@
 				0D3FB4182F54AA9F009E56A4 /* Products */,
 				0D3FB4192F54AA9F009E56A4 /* UniMarket-Swift */,
 				64A588CE2F6600F700FF6FB9 /* Frameworks */,
+				646993852F6CC798005199FC /* MobileNetV2.mlmodel */,
 			);
 			sourceTree = "<group>";
 		};
@@ -170,6 +173,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				646993862F6CC798005199FC /* MobileNetV2.mlmodel in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

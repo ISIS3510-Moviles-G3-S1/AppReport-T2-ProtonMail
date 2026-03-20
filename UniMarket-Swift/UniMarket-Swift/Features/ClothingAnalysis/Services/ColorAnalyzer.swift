@@ -64,7 +64,7 @@ class ColorAnalyzer {
         
         // Render the output image to get pixel data
         let context = CIContext(options: nil)
-        let colorSpace = CGColorSpaceCreateDeviceRGB()
+        _ = CGColorSpaceCreateDeviceRGB()
         
         guard let cgImage = context.createCGImage(
             outputImage,
