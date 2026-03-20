@@ -19,18 +19,17 @@ class ClothingAnalysisViewModel: NSObject, ObservableObject {
     @Published var editableTags: [ClothingTag] = []
     
     // MARK: - Private Properties
-    private let analysisService: ImageAnalysisService
+    private let coreMLFacade = CoreMLAnalysisFacade()
     private var cancellables = Set<AnyCancellable>()
     
     // MARK: - Initialization
-    init(analysisService: ImageAnalysisService = ClarifaiService()) {
-        self.analysisService = analysisService
+    override init() {
         super.init()
     }
     
     // MARK: - Public Methods
     
-    /// Analyzes a clothing image and updates view state
+    /// Analyzes a clothing image and updates view state using Core ML
     /// - Parameter image: The UIImage to analyze
     func analyzeImage(_ image: UIImage) {
         selectedImage = image
@@ -39,7 +38,8 @@ class ClothingAnalysisViewModel: NSObject, ObservableObject {
         
         Task {
             do {
-                let result = try await analysisService.analyzeImage(image)
+                // Use Core ML facade for image analysis (100% offline, no API calls)
+                let result = try await coreMLFacade.analyzeImage(image)
                 
                 // Update state on main thread
                 await MainActor.run {
@@ -48,7 +48,7 @@ class ClothingAnalysisViewModel: NSObject, ObservableObject {
                     self.editableTags = result.allTags
                     self.isAnalyzing = false
                 }
-            } catch let error as ClarifaiServiceError {
+            } catch let error as AnalysisError {
                 await MainActor.run {
                     self.errorMessage = error.errorDescription ?? "Unknown error occurred"
                     self.isAnalyzing = false
