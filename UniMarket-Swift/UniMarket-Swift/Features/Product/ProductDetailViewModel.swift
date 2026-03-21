@@ -11,7 +11,6 @@ import Combine
 final class ProductDetailViewModel: ObservableObject {
     let id: String
     let sellerName: String
-    let imageName: String
     let imageURL: String?
     let rating: Double?
     let description: String
@@ -28,7 +27,6 @@ final class ProductDetailViewModel: ObservableObject {
         self.id = product.id
         self.title = product.title
         self.price = product.price
-        self.imageName = product.imageName
         self.imageURL = product.primaryImageURL
         self.sellerName = product.sellerName
         self.conditionText = isOwnListing ? product.status.rawValue : product.conditionTag

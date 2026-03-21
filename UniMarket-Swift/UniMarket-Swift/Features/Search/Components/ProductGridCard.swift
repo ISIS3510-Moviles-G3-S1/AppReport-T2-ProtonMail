@@ -84,13 +84,16 @@ struct ProductGridCard: View {
                 .clipped()
                 .clipShape(RoundedRectangle(cornerRadius: 18))
         } else {
-            Image(product.imageName)
-                .resizable()
-                .scaledToFill()
-                .frame(height: 180)
-                .frame(maxWidth: .infinity)
-                .clipped()
-                .clipShape(RoundedRectangle(cornerRadius: 18))
+            ZStack {
+                RoundedRectangle(cornerRadius: 18)
+                    .fill(AppTheme.background)
+                Image(systemName: "photo")
+                    .font(.poppinsSemiBold(30))
+                    .foregroundStyle(AppTheme.secondaryText)
+            }
+            .frame(height: 180)
+            .frame(maxWidth: .infinity)
+            .clipShape(RoundedRectangle(cornerRadius: 18))
         }
     }
 }

@@ -96,14 +96,11 @@ struct ActivityView: View {
                                         .frame(width: 72, height: 72)
                                         .clipShape(RoundedRectangle(cornerRadius: 18))
                                 } else {
-                                    Image(product.imageName)
-                                        .resizable()
-                                        .font(.poppinsSemiBold(44))
+                                    Image(systemName: "photo")
+                                        .font(.poppinsSemiBold(22))
                                         .foregroundStyle(AppTheme.secondaryText)
-                                        .scaledToFit()
-                                        .frame(height: 72)
-                                        .frame(maxWidth: .infinity)
-                                        .clipped()
+                                        .frame(width: 72, height: 72)
+                                        .background(AppTheme.background)
                                         .clipShape(RoundedRectangle(cornerRadius: 18))
                                 }
                             }

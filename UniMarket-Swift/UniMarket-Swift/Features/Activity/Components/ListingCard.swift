@@ -82,15 +82,16 @@ struct ListingCard: View {
                 .clipped()
                 .clipShape(RoundedRectangle(cornerRadius: 18))
         } else {
-            Image(product.imageName)
-                .resizable()
-                .font(.poppinsSemiBold(44))
-                .foregroundStyle(AppTheme.secondaryText)
-                .scaledToFit()
-                .frame(height: 180)
-                .frame(maxWidth: .infinity)
-                .clipped()
-                .clipShape(RoundedRectangle(cornerRadius: 18))
+            ZStack {
+                RoundedRectangle(cornerRadius: 18)
+                    .fill(AppTheme.background)
+                Image(systemName: "photo")
+                    .font(.poppinsSemiBold(34))
+                    .foregroundStyle(AppTheme.secondaryText)
+            }
+            .frame(height: 180)
+            .frame(maxWidth: .infinity)
+            .clipShape(RoundedRectangle(cornerRadius: 18))
         }
     }
 }

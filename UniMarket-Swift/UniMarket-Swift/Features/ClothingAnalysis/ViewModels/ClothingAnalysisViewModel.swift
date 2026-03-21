@@ -2,7 +2,7 @@
 //  ClothingAnalysisViewModel.swift
 //  UniMarket-Swift
 //
-//  Created by AI Assistant on 17/03/26.
+//  Created by Felipe Mesa on 17/03/26.
 //
 
 import Foundation
@@ -134,7 +134,7 @@ class ClothingAnalysisViewModel: NSObject, ObservableObject {
         ]
         
         // TODO: Send to analytics service
-        print("📊 Analytics Event: \(event)")
+        print("Analytics Event: \(event)")
     }
     
     /// Logs when user confirms and proceeds with the listing
@@ -146,7 +146,7 @@ class ClothingAnalysisViewModel: NSObject, ObservableObject {
         ]
         
         // TODO: Send to analytics service
-        print("📊 Analytics Event: \(event)")
+        print("Analytics Event: \(event)")
     }
 }
 
