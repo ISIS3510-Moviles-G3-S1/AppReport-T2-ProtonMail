@@ -8,10 +8,12 @@
 import SwiftUI
 
 struct SearchView: View {
+    private let analytics = AnalyticsService.shared
     @EnvironmentObject private var productStore: ProductStore
     @StateObject private var vm = SearchViewModel()
     @State private var selectedProduct: Product?
     @State private var showFilters = false
+    @State private var hasTrackedSearchView = false
 
     private let columns = [
         GridItem(.flexible(), spacing: 12),
@@ -117,6 +119,11 @@ struct SearchView: View {
                                         onTapFavorite: {
                                             productStore.toggleFavorite(for: product)
                                             vm.toggleFavorite(for: product)
+                                            analytics.track(.favoriteToggled(
+                                                productID: product.id,
+                                                isFavorite: !product.isFavorite,
+                                                source: "search"
+                                            ))
                                         },
                                         onTapCard: {
                                             selectedProduct = product
@@ -153,9 +160,20 @@ struct SearchView: View {
         .animation(.easeInOut(duration: 0.22), value: showFilters)
         .task {
             vm.updateProducts(productStore.activeProducts)
+            guard !hasTrackedSearchView else { return }
+            analytics.track(.searchViewed())
+            analytics.track(.productListViewed(source: "search", resultCount: vm.filteredProducts.count))
+            hasTrackedSearchView = true
         }
         .onReceive(productStore.$products) { products in
             vm.updateProducts(products.filter { $0.status == .active }.sorted { $0.createdAt > $1.createdAt })
+        }
+        .onChange(of: vm.query) { _, newValue in
+            let trimmedQuery = newValue.trimmingCharacters(in: .whitespacesAndNewlines)
+            analytics.track(.searchQueryChanged(length: trimmedQuery.count, hasQuery: !trimmedQuery.isEmpty))
+        }
+        .onChange(of: vm.filteredProducts.map(\.id)) { _, _ in
+            analytics.track(.productListViewed(source: "search", resultCount: vm.filteredProducts.count))
         }
         .navigationDestination(item: $selectedProduct) { product in
             ProductDetailView(product: product)
@@ -236,6 +254,7 @@ struct SearchView: View {
                 HStack(spacing: 10) {
                     Button("Reset") {
                         vm.resetFilters()
+                        analytics.track(.searchReset())
                     }
                     .font(.poppinsSemiBold(14))
                     .foregroundStyle(AppTheme.primaryText)
@@ -245,6 +264,14 @@ struct SearchView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
 
                     Button("Apply") {
+                        analytics.track(.searchFiltersApplied(
+                            activeFilterCount: vm.activeFilterCount,
+                            selectedTag: vm.selectedTag,
+                            selectedConditionCount: vm.selectedConditions.count,
+                            onlyFavorites: vm.onlyFavorites,
+                            minRating: vm.minRating,
+                            sortOption: vm.sortOption.rawValue
+                        ))
                         withAnimation(.easeInOut(duration: 0.22)) {
                             showFilters = false
                         }

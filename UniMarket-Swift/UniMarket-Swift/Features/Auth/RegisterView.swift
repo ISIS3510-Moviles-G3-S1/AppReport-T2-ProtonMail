@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct RegisterView: View {
+    private let analytics = AnalyticsService.shared
     @EnvironmentObject var session: SessionManager
     @Environment(\.dismiss) private var dismiss
 
@@ -123,6 +124,9 @@ struct RegisterView: View {
             }
         }
         .navigationBarBackButtonHidden(registrationSent)
+        .onAppear {
+            analytics.track(.authScreenViewed())
+        }
     }
 
     private func submit() async {
@@ -139,6 +143,7 @@ struct RegisterView: View {
         }
 
         isSubmitting = true
+        analytics.track(.registrationAttempt(method: "email_password"))
         do {
             try await session.register(email: fullEmail, password: password, displayName: displayName)
             registrationSent = true

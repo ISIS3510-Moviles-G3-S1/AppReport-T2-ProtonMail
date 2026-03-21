@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct ProductDetailView: View {
+    private let analytics = AnalyticsService.shared
     @EnvironmentObject private var chatStore: ChatStore
     @EnvironmentObject private var productStore: ProductStore
 
@@ -92,6 +93,14 @@ struct ProductDetailView: View {
         }
         .navigationTitle("Product Details")
         .navigationBarTitleDisplayMode(.inline)
+        .onAppear {
+            analytics.track(.productDetailViewed(
+                productID: vm.id,
+                price: vm.price,
+                condition: vm.conditionText,
+                isOwnListing: vm.isOwnListing
+            ))
+        }
         .sheet(item: $editingProduct) { product in
             EditListingView(
                 product: product,
@@ -156,6 +165,11 @@ struct ProductDetailView: View {
             HStack(spacing: 12) {
                 Button {
                     vm.toggleFavorite()
+                    analytics.track(.favoriteToggled(
+                        productID: vm.id,
+                        isFavorite: vm.isFavorite,
+                        source: "product_detail"
+                    ))
                 } label: {
                     HStack(spacing: 8) {
                         Image(systemName: vm.isFavorite ? "heart.fill" : "heart")

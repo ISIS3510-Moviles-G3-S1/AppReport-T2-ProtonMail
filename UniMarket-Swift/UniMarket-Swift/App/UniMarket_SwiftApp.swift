@@ -13,6 +13,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
     func application(_ application: UIApplication,
                      didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
         FirebaseApp.configure()
+        AnalyticsService.shared.track(.appOpened())
         
         // Firebase Auth persistence is .local by default — the session is stored
         // in the device keychain and survives app restarts, so users won't be
