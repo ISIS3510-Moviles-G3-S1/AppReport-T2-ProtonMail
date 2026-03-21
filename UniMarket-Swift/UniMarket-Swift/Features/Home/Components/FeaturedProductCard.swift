@@ -49,12 +49,16 @@ struct FeaturedProductCard: View {
                 AsyncImageView(urlString: imageURL, cacheKey: imageURL)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .clipShape(RoundedRectangle(cornerRadius: 22))
-            } else if !product.imageName.isEmpty {
-                Image(product.imageName)
-                    .resizable()
-                    .scaledToFit()
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .clipShape(RoundedRectangle(cornerRadius: 22))
+            } else {
+                VStack(spacing: 8) {
+                    Image(systemName: "photo")
+                        .font(.poppinsSemiBold(36))
+                        .foregroundStyle(AppTheme.secondaryText)
+                    Text("No image available")
+                        .font(.poppinsRegular(13))
+                        .foregroundStyle(AppTheme.secondaryText)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         } else {
             VStack(spacing: 10) {

@@ -4,7 +4,7 @@ struct ItemSummary: Identifiable, Hashable {
     let id: String
     let title: String
     let price: Int
-    let imageName: String
+    let imageURL: String?
 }
 
 protocol ItemSummarizable {
@@ -17,7 +17,7 @@ extension Product: ItemSummarizable {
             id: id,
             title: title,
             price: price,
-            imageName: imageName
+            imageURL: primaryImageURL
         )
     }
 }

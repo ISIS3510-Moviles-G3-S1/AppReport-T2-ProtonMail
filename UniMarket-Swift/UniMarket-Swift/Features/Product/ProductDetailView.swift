@@ -127,7 +127,7 @@ struct ProductDetailView: View {
                     .frame(width: 300)
                     .clipShape(RoundedRectangle(cornerRadius: 12))
             } else {
-                Image(vm.imageName)
+                Image(systemName: "photo")
                     .font(.poppinsSemiBold(72))
                     .foregroundStyle(AppTheme.secondaryText)
                     .scaledToFit()
@@ -175,7 +175,7 @@ struct ProductDetailView: View {
                         productID: vm.id,
                         productTitle: vm.title,
                         sellerName: vm.sellerName,
-                        productImageName: vm.imageName
+                        productImageName: ""
                     )
                 }
                 .font(.poppinsSemiBold(16))

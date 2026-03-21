@@ -17,7 +17,6 @@ struct Product: Identifiable, Hashable, Codable {
     let tags: [String]
     let rating: Double
     var isFavorite: Bool
-    let imageName: String
     let description: String
     let createdAt: Date
     let soldAt: Date?
@@ -39,7 +38,6 @@ struct Product: Identifiable, Hashable, Codable {
         tags: [String] = [],
         rating: Double = 0,
         isFavorite: Bool = false,
-        imageName: String = "",
         description: String = "",
         createdAt: Date = .now,
         soldAt: Date? = nil,
@@ -56,7 +54,6 @@ struct Product: Identifiable, Hashable, Codable {
         self.tags = tags
         self.rating = rating
         self.isFavorite = isFavorite
-        self.imageName = imageName
         self.description = description
         self.createdAt = createdAt
         self.soldAt = soldAt

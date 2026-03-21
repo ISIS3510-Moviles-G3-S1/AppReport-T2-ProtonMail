@@ -14,10 +14,6 @@ struct ProfileView: View {
     @State private var showImagePicker = false
     @State private var showImageSourceSelection = false
     @State private var imageSource: ImagePicker.Source = .photoLibrary
-    private let metricColumns = [
-        GridItem(.flexible(), spacing: 12),
-        GridItem(.flexible(), spacing: 12)
-    ]
 
     init(viewModel: ProfileViewModel = ProfileViewModel()) {
         _vm = StateObject(wrappedValue: viewModel)
@@ -49,99 +45,43 @@ struct ProfileView: View {
 
                     Divider().padding(.horizontal)
 
-                    EcoSaysCard(message: vm.ecoMessage)
+                    EcoSaysCard(message: vm.ecoMessage, isLoading: vm.isGeneratingEcoMessage)
                         .padding(.horizontal)
 
-                    SustainabilityProgressCard(xp: vm.xp, xpToNext: vm.xpToNext)
+                    SustainabilityProgressCard(
+                        xp: vm.xp,
+                        xpToNext: vm.xpToNext,
+                        levelInfo: vm.calculateLevelInfo(xp: vm.xp)
+                    )
                         .padding(.horizontal)
 
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text("Listing Metrics")
-                            .font(.poppinsSemiBold(16))
-                            .foregroundStyle(AppTheme.primaryText)
-
-                        Picker("Metrics Range", selection: $vm.selectedMetricsRange) {
-                            ForEach(ProfileViewModel.MetricsRange.allCases) { range in
-                                Text(range.rawValue).tag(range)
-                            }
+                    Picker("Time Range", selection: $vm.selectedTimeRange) {
+                        ForEach(ProfileViewModel.TimeRange.allCases, id: \.self) { range in
+                            Text(range.rawValue).tag(range)
                         }
-                        .pickerStyle(.segmented)
                     }
+                    .pickerStyle(.segmented)
                     .padding(.horizontal)
 
-                    LazyVGrid(columns: metricColumns, spacing: 12) {
+                    HStack(spacing: 12) {
                         ProfileMetricCard(
-                            title: "Active Listings",
-                            value: vm.profileMetrics.activeListings,
-                            subtitle: "Listings currently visible in the marketplace.",
-                            systemImage: "hanger",
+                            title: "Items Listed",
+                            value: vm.monthlyProductStats.listingsCreated,
+                            subtitle: "products created",
+                            systemImage: "square.and.pencil",
                             tint: AppTheme.accent,
-                            contextLabel: "Live from Firebase"
+                            contextLabel: vm.selectedTimeRange.rawValue
                         )
 
                         ProfileMetricCard(
                             title: "Items Sold",
-                            value: vm.profileMetrics.itemsSold,
-                            subtitle: "Items marked as sold during the selected period.",
-                            systemImage: "checkmark.seal.fill",
+                            value: vm.monthlyProductStats.itemsSold,
+                            subtitle: "products sold",
+                            systemImage: "checkmark.circle.fill",
                             tint: .green,
-                            contextLabel: vm.selectedMetricsRangeLabel
-                        )
-
-                        ProfileMetricCard(
-                            title: "Items Posted",
-                            value: vm.profileMetrics.listingsCreated,
-                            subtitle: "New listings created during the selected period.",
-                            systemImage: "plus.circle.fill",
-                            tint: .orange,
-                            contextLabel: vm.selectedMetricsRangeLabel
-                        )
-
-                        ProfileMetricCard(
-                            title: "Transactions",
-                            value: vm.transactions,
-                            subtitle: "Completed transactions from your user profile.",
-                            systemImage: "arrow.left.arrow.right.circle.fill",
-                            tint: .blue,
-                            contextLabel: "All time"
+                            contextLabel: vm.selectedTimeRange.rawValue
                         )
                     }
-                    .padding(.horizontal)
-
-                    // TODO: Implement Recent Activity DB Integration
-                    /*
-                     Future Implementation Plan:
-                     1. Create 'activities' collection in Firestore
-                     2. Create Activity model with:
-                        - id: String
-                        - type: enum (sale, purchase, xp_gain, listing)
-                        - title: String
-                        - description: String
-                        - date: Date
-                        - icon: String
-                     3. Add ActivityService to fetch recent activities for user
-                     4. Update ProfileViewModel to expose [Activity] instead of [String]
-                     */
-                    VStack(alignment: .leading, spacing: 10) {
-                        Text("Recent Activity (Mock)")
-                            .font(.poppinsSemiBold(16))
-                            .foregroundStyle(AppTheme.primaryText)
-
-                        VStack(alignment: .leading, spacing: 8) {
-                            ForEach(vm.activity, id: \.self) { act in
-                                Label(act, systemImage: "star.fill") // Placeholder icon
-                                    .font(.poppinsRegular(13))
-                                    .foregroundStyle(AppTheme.secondaryText)
-                            }
-                        }
-                    }
-                    .padding(14)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(
-                        RoundedRectangle(cornerRadius: 14)
-                            .fill(.white)
-                            .shadow(color: .black.opacity(0.05), radius: 4)
-                    )
                     .padding(.horizontal)
 
                     Button {
@@ -162,7 +102,7 @@ struct ProfileView: View {
                         )
                     }
                     .padding(.horizontal)
-                    .padding(.bottom, 24)
+                    .padding(.bottom, 120)
                 }
                 .padding(.top, 10)
             }

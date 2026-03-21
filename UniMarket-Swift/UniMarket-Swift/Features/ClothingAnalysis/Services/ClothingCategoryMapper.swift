@@ -2,7 +2,7 @@
 //  ClothingCategoryMapper.swift
 //  UniMarket-Swift
 //
-//  Created by AI Assistant on 19/03/26.
+//  Created by Felipe Mesa on 19/03/26.
 //
 
 import Foundation

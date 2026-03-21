@@ -2,7 +2,7 @@
 //  ClothingAnalysisView.swift
 //  UniMarket-Swift
 //
-//  Created by AI Assistant on 17/03/26.
+//  Created by Felipe Mesa on 17/03/26.
 //
 
 import SwiftUI

@@ -9,11 +9,26 @@ import SwiftUI
 
 struct EcoSaysCard: View {
     let message: String
+    var isLoading: Bool = false
+
+    @Environment(\.colorScheme) private var colorScheme
+
+    private var imageBackground: Color {
+        colorScheme == .light ? .white : Color.white.opacity(0.12)
+    }
+
+    private var displayMessage: String {
+        if isLoading {
+            return "Preparing your personalized eco recommendation..."
+        }
+        return message
+    }
 
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
             ZStack {
                 RoundedRectangle(cornerRadius: 16)
+                    .fill(imageBackground)
                     .frame(width: 86, height: 86)
                 Image("Eco")
                     .resizable()
@@ -29,7 +44,7 @@ struct EcoSaysCard: View {
                     .font(.poppinsSemiBold(14))
                     .foregroundStyle(AppTheme.accent)
 
-                Text(message)
+                Text(displayMessage)
                     .font(.poppinsRegular(10))
                     .foregroundStyle(AppTheme.primaryText)
             }

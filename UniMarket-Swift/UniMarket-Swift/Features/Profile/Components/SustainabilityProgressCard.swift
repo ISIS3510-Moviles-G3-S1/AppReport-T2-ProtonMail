@@ -8,12 +8,11 @@
 import SwiftUI
 
 struct SustainabilityProgressCard: View {
+    typealias LevelInfo = (title: String, nextTitle: String, xpToNext: Int, minXP: Int, maxXP: Int)
+
     let xp: Int
     let xpToNext: Int
-
-    private var levelInfo: (title: String, nextTitle: String, xpToNext: Int, minXP: Int, maxXP: Int) {
-        calculateLevelInfo(xp: xp)
-    }
+    let levelInfo: LevelInfo
 
     private var progress: Double {
         let minXP = Double(levelInfo.minXP)
@@ -79,20 +78,5 @@ struct SustainabilityProgressCard: View {
                 .fill(.white)
                 .shadow(color: .black.opacity(0.08), radius: 6)
         )
-    }
-
-    private func calculateLevelInfo(xp: Int) -> (title: String, nextTitle: String, xpToNext: Int, minXP: Int, maxXP: Int) {
-        switch xp {
-        case 0..<100:
-            return ("Level 1 - Newcomer", "Level 2 - Eco Learner", 100 - xp, 0, 100)
-        case 100..<300:
-            return ("Level 2 - Eco Learner", "Level 3 - Eco Enthusiast", 300 - xp, 100, 300)
-        case 300..<600:
-            return ("Level 3 - Eco Enthusiast", "Level 4 - Eco Explorer", 600 - xp, 300, 600)
-        case 600..<1000:
-            return ("Level 4 - Eco Explorer", "Level 5 - Sustainability Star", 1000 - xp, 600, 1000)
-        default:
-            return ("Level 5 - Sustainability Star", "Max Level", 0, 1000, 10000)
-        }
     }
 }
