@@ -19,7 +19,7 @@ struct Product: Identifiable, Hashable, Codable {
     var isFavorite: Bool
     let description: String
     let createdAt: Date
-    let soldAt: Date?
+    var soldAt: Date?
     let imagePath: String?
     let imageURLs: [String]
     var status: ProductStatus

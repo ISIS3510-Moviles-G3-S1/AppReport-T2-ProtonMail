@@ -13,6 +13,7 @@ import UIKit
 #endif
 
 struct UploadProductView: View {
+    private let analytics = AnalyticsService.shared
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var productStore: ProductStore
     @StateObject private var vm = UploadProductViewModel()
@@ -111,7 +112,11 @@ struct UploadProductView: View {
             }
         }
         .colorScheme(.light)
+        .onAppear {
+            analytics.track(.uploadScreenViewed())
+        }
         .onChange(of: vm.selectedItems) { _, _ in
+            analytics.track(.listingPhotosSelected(count: vm.selectedItems.count, source: "gallery"))
             Task {
                 await vm.loadSelectedPhotos()
             }
@@ -119,6 +124,7 @@ struct UploadProductView: View {
         .sheet(isPresented: $showCamera) {
             ImagePicker(source: .camera) { uiImage in
                 vm.addImageFromCamera(uiImage)
+                analytics.track(.listingPhotosSelected(count: vm.selectedImages.count, source: "camera"))
             }
         }
         .navigationDestination(isPresented: $showClothingAnalysis) {
@@ -226,6 +232,7 @@ struct UploadProductView: View {
 
                             Button {
                                 vm.removeImage(at: index)
+                                analytics.track(.listingPhotoRemoved(remainingCount: max(vm.selectedImages.count - 1, 0)))
                             } label: {
                                 Image(systemName: "xmark")
                                     .font(.poppinsBold(12))

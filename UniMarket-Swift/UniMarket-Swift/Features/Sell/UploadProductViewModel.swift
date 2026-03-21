@@ -7,6 +7,7 @@ import UIKit
 #endif
 
 final class UploadProductViewModel: ObservableObject {
+    private let analytics = AnalyticsService.shared
     @Published var selectedItems: [PhotosPickerItem] = []
     @Published var selectedImages: [Image] = []
     @Published var imagesData: [Data] = []
@@ -77,6 +78,12 @@ final class UploadProductViewModel: ObservableObject {
 
     func postProduct(using productStore: ProductStore) async -> Bool {
         guard canPost, let parsedPrice = Int(price) else { return false }
+        analytics.track(.listingSubmitAttempt(
+            photoCount: imagesData.count,
+            hasDescription: !description.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+            condition: condition,
+            priceBucket: priceBucket(for: parsedPrice)
+        ))
 
         await MainActor.run {
             isPosting = true
@@ -100,6 +107,7 @@ final class UploadProductViewModel: ObservableObject {
             await MainActor.run { resetForm() }
             return true
         } catch {
+            analytics.track(.listingSubmitFailed(reason: error.localizedDescription))
             await MainActor.run { errorMessage = error.localizedDescription }
             return false
         }
@@ -115,6 +123,19 @@ final class UploadProductViewModel: ObservableObject {
         condition = "Good"
         description = ""
         errorMessage = nil
+    }
+
+    private func priceBucket(for price: Int) -> String {
+        switch price {
+        case ..<25000:
+            return "under_25k"
+        case 25000..<50000:
+            return "25k_50k"
+        case 50000..<100000:
+            return "50k_100k"
+        default:
+            return "100k_plus"
+        }
     }
 }
 

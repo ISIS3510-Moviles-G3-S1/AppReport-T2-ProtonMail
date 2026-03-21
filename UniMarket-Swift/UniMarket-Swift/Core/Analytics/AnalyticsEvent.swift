@@ -222,11 +222,12 @@ extension AnalyticsEvent {
         )
     }
 
-    static func listingSubmitSucceeded(productID: String, photoCount: Int, priceBucket: String) -> AnalyticsEvent {
+    static func listingSubmitSucceeded(productID: String, sellerID: String, photoCount: Int, priceBucket: String) -> AnalyticsEvent {
         AnalyticsEvent(
             name: "listing_submit_succeeded",
             parameters: [
                 "product_id": .string(productID),
+                "seller_id": .string(sellerID),
                 "photo_count": .int(photoCount),
                 "price_bucket": .string(priceBucket)
             ]
@@ -237,6 +238,17 @@ extension AnalyticsEvent {
         AnalyticsEvent(
             name: "listing_submit_failed",
             parameters: ["reason": .string(reason)]
+        )
+    }
+
+    static func listingMarkedSold(productID: String, sellerID: String, priceBucket: String) -> AnalyticsEvent {
+        AnalyticsEvent(
+            name: "listing_marked_sold",
+            parameters: [
+                "product_id": .string(productID),
+                "seller_id": .string(sellerID),
+                "price_bucket": .string(priceBucket)
+            ]
         )
     }
 }

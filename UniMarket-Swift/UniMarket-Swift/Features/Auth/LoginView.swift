@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct LoginView: View {
+    private let analytics = AnalyticsService.shared
     var onRegisterTap: () -> Void = {}
     @EnvironmentObject var session: SessionManager
     @State private var username = ""
@@ -46,6 +47,7 @@ struct LoginView: View {
                             Task {
                                 isSubmitting = true
                                 errorMessage = nil
+                                analytics.track(.loginAttempt(method: "email_password"))
                                 do {
                                     try await session.signIn(email: fullEmail, password: password)
                                 } catch {
@@ -113,6 +115,9 @@ struct LoginView: View {
                 .padding(.horizontal, 20)
                 .padding(.vertical, 28)
             }
+        }
+        .onAppear {
+            analytics.track(.authScreenViewed())
         }
     }
 

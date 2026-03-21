@@ -15,6 +15,7 @@ enum MainTab: Hashable {
 }
 
 struct MainTabView: View {
+    private let analytics = AnalyticsService.shared
     @State private var selectedTab: MainTab = .home
     @State private var showUpload = false
     @StateObject private var profileViewModel = ProfileViewModel()
@@ -47,7 +48,11 @@ struct MainTabView: View {
                 UploadProductView()
             }
         }
+        .onAppear {
+            analytics.track(.tabSelected(selectedTab.analyticsName))
+        }
         .onChange(of: selectedTab) { _, newTab in
+            analytics.track(.tabSelected(newTab.analyticsName))
             guard newTab == .profile else { return }
             Task {
                 await profileViewModel.onProfileTabSelected()
@@ -71,6 +76,21 @@ struct MainTabView: View {
             NavigationStack { ActivityView() }
         case .profile:
             NavigationStack { ProfileView(viewModel: profileViewModel) }
+        }
+    }
+}
+
+private extension MainTab {
+    var analyticsName: String {
+        switch self {
+        case .home:
+            return "home"
+        case .search:
+            return "search"
+        case .activity:
+            return "activity"
+        case .profile:
+            return "profile"
         }
     }
 }

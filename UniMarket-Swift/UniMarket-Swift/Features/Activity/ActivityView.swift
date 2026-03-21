@@ -14,6 +14,8 @@ struct ActivityView: View {
     @StateObject private var vm = ActivityViewModel()
     @State private var selectedListing: Product?
     @State private var selectedLikedProduct: Product?
+    @State private var listingPendingDelete: Product?
+    @State private var deleteErrorMessage: String?
 
     var body: some View {
         ZStack {
@@ -69,6 +71,29 @@ struct ActivityView: View {
         }
         .navigationDestination(item: $selectedLikedProduct) { product in
             ProductDetailView(product: product)
+        }
+        .confirmationDialog(
+            "Delete this listing?",
+            isPresented: deleteConfirmationBinding,
+            titleVisibility: .visible
+        ) {
+            Button("Delete", role: .destructive) {
+                Task {
+                    await deleteListing()
+                }
+            }
+            Button("Cancel", role: .cancel) {
+                listingPendingDelete = nil
+            }
+        } message: {
+            Text("This will remove the listing from your profile.")
+        }
+        .alert("Couldn't Delete Listing", isPresented: deleteErrorBinding) {
+            Button("OK", role: .cancel) {
+                deleteErrorMessage = nil
+            }
+        } message: {
+            Text(deleteErrorMessage ?? "Unknown error")
         }
     }
 
@@ -151,14 +176,46 @@ struct ActivityView: View {
                 ListingCard(
                     product: product,
                     onDelete: {
-                        Task {
-                            try? await productStore.deleteProduct(product)
-                            vm.deleteListing(product)
-                        }
+                        listingPendingDelete = product
                     },
                     onTapDetail: { selectedListing = product }
                 )
             }
+        }
+    }
+
+    private var deleteConfirmationBinding: Binding<Bool> {
+        Binding(
+            get: { listingPendingDelete != nil },
+            set: { isPresented in
+                if !isPresented {
+                    listingPendingDelete = nil
+                }
+            }
+        )
+    }
+
+    private var deleteErrorBinding: Binding<Bool> {
+        Binding(
+            get: { deleteErrorMessage != nil },
+            set: { isPresented in
+                if !isPresented {
+                    deleteErrorMessage = nil
+                }
+            }
+        )
+    }
+
+    @MainActor
+    private func deleteListing() async {
+        guard let product = listingPendingDelete else { return }
+
+        do {
+            try await productStore.deleteProduct(product)
+            vm.deleteListing(product)
+            listingPendingDelete = nil
+        } catch {
+            deleteErrorMessage = error.localizedDescription
         }
     }
 }

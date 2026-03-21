@@ -15,6 +15,7 @@ struct CreateProductInput {
 final class ProductService {
     static let shared = ProductService()
 
+    private let analytics = AnalyticsService.shared
     private let db = Firestore.firestore()
     private let collectionName = "listings"
 
@@ -81,7 +82,7 @@ final class ProductService {
             "description": input.description,
             "createdAt": FieldValue.serverTimestamp(),
             "soldAt": NSNull(),
-            "imagePath": imageURLs.first as Any,
+            "imagePath": imageURLs.first ?? NSNull(),
             "imageURLs": imageURLs,
             "status": ProductStatus.active.rawValue
         ]
@@ -93,22 +94,46 @@ final class ProductService {
             throw ProductServiceError.invalidProductData
         }
 
+        analytics.track(.listingSubmitSucceeded(
+            productID: product.id,
+            sellerID: product.sellerId,
+            photoCount: input.imagesData.count,
+            priceBucket: priceBucket(for: product.price)
+        ))
+
         return product
     }
 
     func updateProduct(_ product: Product) async throws {
+        let soldAtValue: Any
+        if product.status == .sold {
+            soldAtValue = product.soldAt.map { Timestamp(date: $0) } ?? (FieldValue.serverTimestamp() as Any)
+        } else {
+            soldAtValue = NSNull()
+        }
+
         try await db.collection(collectionName).document(product.id).updateData([
             "title": product.title,
             "price": product.price,
-            "status": product.status.rawValue
+            "status": product.status.rawValue,
+            "soldAt": soldAtValue
         ])
+
+        if product.status == .sold, product.soldAt == nil {
+            analytics.track(.listingMarkedSold(
+                productID: product.id,
+                sellerID: product.sellerId,
+                priceBucket: priceBucket(for: product.price)
+            ))
+        }
     }
 
     func deleteProduct(_ product: Product) async throws {
+        try await db.collection(collectionName).document(product.id).delete()
+
         for imageURL in product.imageURLs where !imageURL.isEmpty {
             try? await ImageUploadService.deleteImage(at: imageURL)
         }
-        try await db.collection(collectionName).document(product.id).delete()
     }
 
     private func resolvedSellerName(from user: FirebaseAuth.User) -> String {
@@ -141,6 +166,19 @@ final class ProductService {
         }
 
         return tags
+    }
+
+    private func priceBucket(for price: Int) -> String {
+        switch price {
+        case ..<25000:
+            return "under_25k"
+        case 25000..<50000:
+            return "25k_50k"
+        case 50000..<100000:
+            return "50k_100k"
+        default:
+            return "100k_plus"
+        }
     }
 
     private static func makeProduct(from document: DocumentSnapshot) -> Product? {
