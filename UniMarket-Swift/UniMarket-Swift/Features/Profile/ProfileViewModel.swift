@@ -54,6 +54,23 @@ final class ProfileViewModel: ObservableObject {
         static let cachedProfilePic = "profile.cached.profilePic"
         static let cachedMemberSince = "profile.cached.memberSince"
         static let staticSeedUID = "profile.static.seed.uid"
+        static let ecoMessageHash = "profile.eco.message.hash"
+        static let ecoMessageTimestamp = "profile.eco.message.timestamp"
+    }
+    
+    private struct EcoMessageRequest {
+        let displayName: String
+        let rating: Double
+        let xp: Int
+        let levelTitle: String
+        let xpToNext: Int
+        let soldCount: Int
+        let transactions: Int
+        
+        func hash() -> String {
+            let content = "\(displayName):\(rating):\(xp):\(levelTitle):\(xpToNext):\(soldCount):\(transactions)"
+            return String(content.hashValue)
+        }
     }
     
     init() {
@@ -150,20 +167,36 @@ final class ProfileViewModel: ObservableObject {
     
     private func applyDynamicFields(_ user: User) {
         let levelInfo = calculateLevelInfo(xp: user.xpPoints)
-        rating = user.ratingStars
-        transactions = user.numTransactions
-        xp = user.xpPoints
-        xpToNext = levelInfo.xpToNext
+        
+        var dataChanged = false
+        if rating != user.ratingStars {
+            rating = user.ratingStars
+            dataChanged = true
+        }
+        if transactions != user.numTransactions {
+            transactions = user.numTransactions
+            dataChanged = true
+        }
+        if xp != user.xpPoints {
+            xp = user.xpPoints
+            xpToNext = levelInfo.xpToNext
+            dataChanged = true
+        }
         
         let defaults = UserDefaults.standard
-        defaults.set(user.ratingStars, forKey: CacheKey.dynamicRating)
-        defaults.set(user.numTransactions, forKey: CacheKey.dynamicTransactions)
-        defaults.set(user.xpPoints, forKey: CacheKey.dynamicXP)
+        if dataChanged {
+            defaults.set(user.ratingStars, forKey: CacheKey.dynamicRating)
+            defaults.set(user.numTransactions, forKey: CacheKey.dynamicTransactions)
+            defaults.set(user.xpPoints, forKey: CacheKey.dynamicXP)
+        }
         
         updateEcoMessage(xp: user.xpPoints)
 
-        Task { [weak self] in
-            await self?.refreshPersonalizedEcoMessageIfNeeded(force: true)
+        // Only refresh if data actually changed (not on every subscriber update)
+        if dataChanged {
+            Task { [weak self] in
+                await self?.refreshPersonalizedEcoMessageIfNeeded(force: false)
+            }
         }
     }
     
@@ -239,11 +272,35 @@ final class ProfileViewModel: ObservableObject {
             return
         }
 
+        let levelInfo = calculateLevelInfo(xp: xp)
+        let soldCount = listings.filter { $0.soldAt != nil }.count
+        let currentRequest = EcoMessageRequest(
+            displayName: displayName,
+            rating: rating,
+            xp: xp,
+            levelTitle: levelInfo.title,
+            xpToNext: max(0, levelInfo.xpToNext),
+            soldCount: soldCount,
+            transactions: transactions
+        )
+        
+        // Check if we should skip due to unchanged data and recent request
+        if !force {
+            let defaults = UserDefaults.standard
+            let lastHash = defaults.string(forKey: CacheKey.ecoMessageHash) ?? ""
+            let lastTimestamp = defaults.double(forKey: CacheKey.ecoMessageTimestamp)
+            let timeSinceLastRequest = Date().timeIntervalSince1970 - lastTimestamp
+            let minTimeBetweenRequests: TimeInterval = 300 // 5 minutes
+            
+            if lastHash == currentRequest.hash() && timeSinceLastRequest < minTimeBetweenRequests {
+                print("DEBUG[ProfileVM] Data unchanged and recent request exists. Skipping personalization.")
+                return
+            }
+        }
+
         isGeneratingEcoMessage = true
         defer { isGeneratingEcoMessage = false }
 
-        let levelInfo = calculateLevelInfo(xp: xp)
-        let soldCount = listings.filter { $0.soldAt != nil }.count
         let prompt = """
         Create one personalized sustainability recommendation for this user.
         Name: \(displayName)
@@ -260,6 +317,12 @@ final class ProfileViewModel: ObservableObject {
         do {
             let response = try await OpenRouterService.shared.generateEcoRecommendation(prompt: prompt)
             ecoMessage = response
+            
+            // Cache the request details
+            let defaults = UserDefaults.standard
+            defaults.set(currentRequest.hash(), forKey: CacheKey.ecoMessageHash)
+            defaults.set(Date().timeIntervalSince1970, forKey: CacheKey.ecoMessageTimestamp)
+            
             print("DEBUG[ProfileVM] Personalized ecoMessage updated chars=\(response.count)")
         } catch {
             // Keep existing deterministic fallback if personalization fails.
