@@ -41,6 +41,14 @@ struct ActivityView: View {
                     .pickerStyle(.segmented)
                     .padding(.horizontal)
 
+                    if !vm.feedbackMessage.isEmpty {
+                        Text(vm.feedbackMessage)
+                            .font(.poppinsRegular(13))
+                            .foregroundStyle(AppTheme.secondaryText)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.horizontal)
+                    }
+
                     Group {
                         switch vm.selectedTab {
                         case .likes:
@@ -60,6 +68,7 @@ struct ActivityView: View {
         }
         .task {
             vm.sync(products: productStore.products, currentUserID: session.user?.uid)
+            vm.refreshInteractionState()
         }
         .onReceive(productStore.$products) { products in
             vm.sync(products: products, currentUserID: session.user?.uid)

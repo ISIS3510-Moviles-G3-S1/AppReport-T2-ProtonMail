@@ -74,6 +74,20 @@ final class ProductStore: ObservableObject {
             savedProductIDs.remove(product.id)
         }
 
+        let saved = products[index]
+        let favoriteItem = FavoriteItem(
+            id: saved.id,
+            title: saved.title,
+            price: saved.price,
+            imageURL: saved.primaryImageURL,
+            sellerName: saved.sellerName
+        )
+        if isSaved {
+            FavoritesCacheManager.shared.addFavorite(favoriteItem)
+        } else {
+            FavoritesCacheManager.shared.removeFavorite(itemId: product.id)
+        }
+
         guard let uid = Auth.auth().currentUser?.uid else { return }
 
         // Offline: enqueue rather than letting Firestore's offline cache buffer
