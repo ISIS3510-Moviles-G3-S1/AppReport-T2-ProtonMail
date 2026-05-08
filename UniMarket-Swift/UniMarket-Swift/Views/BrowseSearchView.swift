@@ -12,6 +12,9 @@ struct BrowseSearchView: View {
 
     @Binding var showFilters: Bool
 
+    @ObservedObject private var network = NetworkMonitor.shared
+    @ObservedObject private var prefs = UserPreferencesStore.shared
+
     private let columns = [
         GridItem(.flexible(), spacing: 12),
         GridItem(.flexible(), spacing: 12)
@@ -21,6 +24,24 @@ struct BrowseSearchView: View {
         GeometryReader { proxy in
             ZStack(alignment: .trailing) {
                 VStack(spacing: 12) {
+                    // Offline banner — shown when disconnected and user hasn't disabled it in Preferences
+                    if !network.isConnected && prefs.showOfflineBanner {
+                        HStack(spacing: 8) {
+                            Image(systemName: "wifi.slash")
+                                .font(.system(size: 13, weight: .semibold))
+                            Text("You're offline — showing cached results")
+                                .font(.poppinsRegular(12))
+                        }
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 8)
+                        .frame(maxWidth: .infinity)
+                        .background(Color.orange.opacity(0.85))
+                        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                        .transition(.move(edge: .top).combined(with: .opacity))
+                        .animation(.easeInOut(duration: 0.25), value: network.isConnected)
+                    }
+
                     HStack(spacing: 10) {
                         HStack(spacing: 8) {
                             Image(systemName: "magnifyingglass")

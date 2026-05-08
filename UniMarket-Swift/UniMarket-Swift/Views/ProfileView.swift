@@ -10,6 +10,7 @@ import SwiftUI
 struct ProfileView: View {
     @StateObject private var vm: ProfileViewModel
     @EnvironmentObject var session: SessionManager
+    @ObservedObject private var prefs = UserPreferencesStore.shared
     @State private var showLogoutConfirm = false
     @State private var showImagePicker = false
     @State private var showImageSourceSelection = false
@@ -99,6 +100,9 @@ struct ProfileView: View {
                         )
                     }
                     .padding(.horizontal)
+
+                    PreferencesCard(prefs: prefs)
+                        .padding(.horizontal)
 
                     Button {
                         showLogoutConfirm = true
