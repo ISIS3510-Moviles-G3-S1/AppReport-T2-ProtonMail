@@ -137,12 +137,14 @@ final class SessionManager: ObservableObject {
                 try? await PendingListingMutationsStore.shared.clearUserQueue(for: uid)
             }
         }
+        let evictedUID = user?.uid
         try Auth.auth().signOut()
         user = nil
         currentUser = nil
         isLoading = false
         UserProfileCache.shared.clear()
         ProfileInsightsLRU.shared.clear()
+        RecentlyViewedCache.shared.clear(for: evictedUID)
         analytics.track(.signOut())
         analytics.reset()
     }

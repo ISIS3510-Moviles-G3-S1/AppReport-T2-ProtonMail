@@ -12,6 +12,7 @@ struct HomeView: View {
     @EnvironmentObject private var productStore: ProductStore
     @EnvironmentObject private var session: SessionManager
     @StateObject private var viewModel = HomeViewModel()
+    @State private var recentlyViewed: [Product] = []
 
     let onBrowseItems: () -> Void
     let onStartSelling: () -> Void
@@ -36,6 +37,8 @@ struct HomeView: View {
 
                     seasonSection
 
+                    RecentlyViewedSection(products: recentlyViewed)
+
                     FeaturedProductCard(product: browseProducts.first)
                 }
                 .padding(.horizontal, 16)
@@ -45,6 +48,9 @@ struct HomeView: View {
             .refreshable {
                 await productStore.loadSavedItems()
             }
+        }
+        .onAppear {
+            recentlyViewed = RecentlyViewedCache.shared.products(for: session.uid)
         }
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
