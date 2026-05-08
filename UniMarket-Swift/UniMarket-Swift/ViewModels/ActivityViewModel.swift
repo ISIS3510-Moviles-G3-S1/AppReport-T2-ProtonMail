@@ -21,7 +21,8 @@ final class ActivityViewModel: ObservableObject {
     enum UserActivityState {
         case active    // < 1 day
         case idle      // 1–3 days
-        case inactive  // > 3 days
+        case inactive  // 3–7 days
+        case dormant   // > 7 days
     }
 
     @Published var selectedTab: Tab = .likes
@@ -48,12 +49,15 @@ final class ActivityViewModel: ObservableObject {
         case ..<1:
             userActivityState = .active
             feedbackMessage = "You're very active! Keep exploring items."
-        case 1...3:
+        case 1..<3:
             userActivityState = .idle
-            feedbackMessage = "It's been a while, check out new listings."
-        default:
+            feedbackMessage = "It's been a couple of days — check out new listings."
+        case 3..<7:
             userActivityState = .inactive
-            feedbackMessage = "We miss you! Come back and discover items."
+            feedbackMessage = "We miss you! It's been \(Int(days)) days since your last visit."
+        default:
+            userActivityState = .dormant
+            feedbackMessage = "It's been over a week! Come back and see what's new."
         }
     }
 
