@@ -69,6 +69,13 @@ final class BrowseSearchViewModel: ObservableObject {
 
     init() {
         resetPriceRange()
+        // Restore user's saved preferences from UserDefaults via UserPreferencesStore.
+        let prefs = UserPreferencesStore.shared
+        sortOption = SearchSortOption(rawValue: prefs.defaultSortOptionRaw) ?? .relevance
+        let savedCategory = prefs.defaultCategoryFilter
+        if !savedCategory.isEmpty {
+            selectedTag = savedCategory
+        }
     }
 
     func updateProducts(_ products: [Product]) {
