@@ -9,24 +9,22 @@
 	<key>PLIST_VERSION</key>
 	<string>1</string>
 	<key>BUNDLE_ID</key>
-	<string>unimarket.UniMarket-Swift-felipe</string>
+	<string>unimarket.UniMarket-Swift-Felipe</string>
 	<key>PROJECT_ID</key>
 	<string>unimarket-e3282</string>
 	<key>STORAGE_BUCKET</key>
 	<string>unimarket-e3282.firebasestorage.app</string>
 	<key>IS_ADS_ENABLED</key>
-	<false/>
+	<false></false>
 	<key>IS_ANALYTICS_ENABLED</key>
-	<false/>
+	<false></false>
 	<key>IS_APPINVITE_ENABLED</key>
-	<true/>
+	<true></true>
 	<key>IS_GCM_ENABLED</key>
-	<true/>
+	<true></true>
 	<key>IS_SIGNIN_ENABLED</key>
-	<true/>
-	<key>CFBundleIdentifier</key>
-	<string></string>
+	<true></true>
 	<key>GOOGLE_APP_ID</key>
-	<string>1:900978890680:ios:85892d2348decda035214d</string>
+	<string>1:900978890680:ios:f7e638a564f1be1c35214d</string>
 </dict>
 </plist>
