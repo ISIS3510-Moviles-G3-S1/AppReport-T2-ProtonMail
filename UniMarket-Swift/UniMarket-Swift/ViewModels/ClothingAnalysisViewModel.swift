@@ -47,7 +47,7 @@ class ClothingAnalysisViewModel: NSObject, ObservableObject {
                 let result = try await self.coreMLFacade.analyzeImage(image)
                 let durationMs = Int(Date().timeIntervalSince(start) * 1000)
 
-                AnalyticsService.shared.track(.aiTaggingCompleted(durationMs: durationMs, tagCount: result.allTags.count))
+                await AnalyticsService.shared.track(.aiTaggingCompleted(durationMs: durationMs, tagCount: result.allTags.count))
 
                 await MainActor.run {
                     self.analysisResult = result
@@ -57,14 +57,14 @@ class ClothingAnalysisViewModel: NSObject, ObservableObject {
                 }
             } catch let error as AnalysisError {
                 let durationMs = Int(Date().timeIntervalSince(start) * 1000)
-                AnalyticsService.shared.track(.aiTaggingCompleted(durationMs: durationMs, tagCount: 0))
+                await AnalyticsService.shared.track(.aiTaggingCompleted(durationMs: durationMs, tagCount: 0))
                 await MainActor.run {
                     self.errorMessage = error.errorDescription ?? "Unknown error occurred"
                     self.isAnalyzing = false
                 }
             } catch {
                 let durationMs = Int(Date().timeIntervalSince(start) * 1000)
-                AnalyticsService.shared.track(.aiTaggingCompleted(durationMs: durationMs, tagCount: 0))
+                await AnalyticsService.shared.track(.aiTaggingCompleted(durationMs: durationMs, tagCount: 0))
                 await MainActor.run {
                     self.errorMessage = error.localizedDescription
                     self.isAnalyzing = false
