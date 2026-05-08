@@ -38,16 +38,17 @@ class ClothingAnalysisViewModel: NSObject, ObservableObject {
         isAnalyzing = true
         errorMessage = nil
         
-        Task {
+        // Task.detached runs on a background executor (not @MainActor), making the
+        // I/O context explicit. All UI mutations hop back via await MainActor.run.
+        Task.detached(priority: .userInitiated) { [weak self] in
+            guard let self else { return }
             let start = Date()
             do {
-                // Use Core ML facade for image analysis (100% offline, no API calls)
-                let result = try await coreMLFacade.analyzeImage(image)
+                let result = try await self.coreMLFacade.analyzeImage(image)
                 let durationMs = Int(Date().timeIntervalSince(start) * 1000)
 
                 AnalyticsService.shared.track(.aiTaggingCompleted(durationMs: durationMs, tagCount: result.allTags.count))
 
-                // Update state on main thread
                 await MainActor.run {
                     self.analysisResult = result
                     self.processingTimeMs = result.processingTimeMs
