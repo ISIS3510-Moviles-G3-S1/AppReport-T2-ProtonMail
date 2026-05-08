@@ -148,13 +148,24 @@ struct ProductDetailView: View {
         .navigationTitle("Product Details")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
-            analytics.track(.productDetailViewed(
+            let event = AnalyticsEvent.productDetailViewed(
                 productID: vm.id,
                 price: vm.price,
                 condition: vm.conditionText,
                 isOwnListing: vm.isOwnListing,
                 source: source.rawValue
-            ))
+            )
+            analytics.track(event)
+
+            if let surfaceEvent = AnalyticsEvent.surfaceProductDetailViewed(
+                productID: vm.id,
+                price: vm.price,
+                condition: vm.conditionText,
+                isOwnListing: vm.isOwnListing,
+                source: source.rawValue
+            ) {
+                analytics.track(surfaceEvent)
+            }
             FavoritesCacheManager.shared.saveLastInteraction()
         }
         .onReceive(productStore.$products) { products in
@@ -276,11 +287,20 @@ struct ProductDetailView: View {
                     } else {
                         vm.toggleFavorite()
                     }
-                    analytics.track(.favoriteToggled(
+                    let event = AnalyticsEvent.favoriteToggled(
                         productID: vm.id,
                         isFavorite: nextFavoriteState,
                         source: source == .unknown ? AnalyticsSurface.productDetail.rawValue : source.rawValue
-                    ))
+                    )
+                    analytics.track(event)
+
+                    if let surfaceEvent = AnalyticsEvent.surfaceFavoriteToggled(
+                        productID: vm.id,
+                        isFavorite: nextFavoriteState,
+                        source: source.rawValue
+                    ) {
+                        analytics.track(surfaceEvent)
+                    }
                     FavoritesCacheManager.shared.saveLastInteraction()
                 } label: {
                     HStack(spacing: 8) {

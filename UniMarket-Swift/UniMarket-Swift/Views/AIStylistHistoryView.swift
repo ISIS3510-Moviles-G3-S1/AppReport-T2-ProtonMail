@@ -36,11 +36,6 @@ struct AIStylistHistoryView: View {
                 await viewModel.loadConversations()
             }
         }
-        .onDisappear {
-            withAnimation {
-                hideTabBar.wrappedValue = false
-            }
-        }
         .onChange(of: viewModel.searchText) {
             Task {
                 await viewModel.refreshSearch()

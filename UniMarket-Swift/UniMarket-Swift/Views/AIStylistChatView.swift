@@ -7,6 +7,7 @@ struct AIStylistChatView: View {
     @EnvironmentObject private var productStore: ProductStore
     @EnvironmentObject private var session: SessionManager
     @Environment(\.hideTabBar) private var hideTabBar
+    @Environment(\.dismiss) private var dismiss
     @StateObject private var viewModel: AIStylistChatViewModel
     @StateObject private var networkMonitor = NetworkMonitor()
     @State private var draftMessage = ""
@@ -72,16 +73,16 @@ struct AIStylistChatView: View {
             inputBar
         }
         .background(AppTheme.background)
-        .navigationTitle(viewModel.conversationTitle)
+        .safeAreaInset(edge: .top, spacing: 0) {
+            headerBar
+        }
+        .navigationBarBackButtonHidden(true)
         .navigationBarTitleDisplayMode(.inline)
+        .toolbarBackground(.hidden, for: .navigationBar)
+        .toolbar(.hidden, for: .navigationBar)
         .onAppear {
             withAnimation {
                 hideTabBar.wrappedValue = true
-            }
-        }
-        .onDisappear {
-            withAnimation {
-                hideTabBar.wrappedValue = false
             }
         }
         .sheet(isPresented: $showPhotoLibrary) {
@@ -89,6 +90,33 @@ struct AIStylistChatView: View {
                 selectedReferenceImage = image
             }
         }
+    }
+
+    private var headerBar: some View {
+        HStack(spacing: 12) {
+            Button {
+                dismiss()
+            } label: {
+                Image(systemName: "chevron.left")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(AppTheme.primaryText)
+                    .frame(width: 36, height: 36)
+                    .background(AppTheme.cardBackground)
+                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+            }
+            .buttonStyle(.plain)
+
+            Text(viewModel.conversationTitle)
+                .font(.poppinsSemiBold(18))
+                .foregroundStyle(AppTheme.primaryText)
+                .lineLimit(1)
+
+            Spacer()
+        }
+        .padding(.horizontal)
+        .padding(.top, 6)
+        .padding(.bottom, 12)
+        .background(AppTheme.background)
     }
 
     private var promptStrip: some View {

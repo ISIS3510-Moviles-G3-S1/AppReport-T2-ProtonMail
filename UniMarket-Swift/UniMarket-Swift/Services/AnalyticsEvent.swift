@@ -51,6 +51,17 @@ enum AnalyticsValue {
 }
 
 extension AnalyticsEvent {
+    private static func surfacePrefix(for source: String) -> String? {
+        switch source {
+        case AnalyticsSurface.browseSearch.rawValue:
+            return "browse_search"
+        case AnalyticsSurface.searchRecommendations.rawValue:
+            return "search_recommendations"
+        default:
+            return nil
+        }
+    }
+
     static func appOpened() -> AnalyticsEvent {
         AnalyticsEvent(name: "app_opened")
     }
@@ -213,6 +224,18 @@ extension AnalyticsEvent {
         )
     }
 
+    static func surfaceFavoriteToggled(productID: String, isFavorite: Bool, source: String) -> AnalyticsEvent? {
+        guard let prefix = surfacePrefix(for: source) else { return nil }
+
+        return AnalyticsEvent(
+            name: "\(prefix)_favorite_toggled",
+            parameters: [
+                "product_id": .string(productID),
+                "is_favorite": .bool(isFavorite)
+            ]
+        )
+    }
+
     static func uploadScreenViewed() -> AnalyticsEvent {
         AnalyticsEvent(name: "upload_screen_viewed")
     }
@@ -311,6 +334,26 @@ extension AnalyticsEvent {
                 "product_id": .string(productID),
                 "transaction_id": .string(transactionID),
                 "source": .string(source)
+            ]
+        )
+    }
+
+    static func surfaceProductDetailViewed(
+        productID: String,
+        price: Int,
+        condition: String,
+        isOwnListing: Bool,
+        source: String
+    ) -> AnalyticsEvent? {
+        guard let prefix = surfacePrefix(for: source) else { return nil }
+
+        return AnalyticsEvent(
+            name: "\(prefix)_product_detail_viewed",
+            parameters: [
+                "product_id": .string(productID),
+                "price": .int(price),
+                "condition": .string(condition),
+                "is_own_listing": .bool(isOwnListing)
             ]
         )
     }

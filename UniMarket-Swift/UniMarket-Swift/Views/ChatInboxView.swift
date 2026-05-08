@@ -3,6 +3,7 @@ import Kingfisher
 
 struct ChatInboxView: View {
     @EnvironmentObject private var chatStore: ChatStore
+    @Environment(\.hideTabBar) private var hideTabBar
 
     var body: some View {
         Group {
@@ -17,6 +18,9 @@ struct ChatInboxView: View {
         .background(AppTheme.background)
         .navigationTitle("Inbox")
         .onAppear {
+            withAnimation {
+                hideTabBar.wrappedValue = false
+            }
             // Ensure listeners are active (they should already be from RootView)
             chatStore.startObservingConversations()
         }

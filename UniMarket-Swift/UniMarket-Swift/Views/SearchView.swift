@@ -151,11 +151,20 @@ struct SearchView: View {
         productStore.toggleFavorite(for: product)
         browseViewModel.toggleFavorite(for: product)
         recommendationsViewModel.toggleFavorite(for: product)
-        analytics.track(.favoriteToggled(
+        let event = AnalyticsEvent.favoriteToggled(
             productID: product.id,
             isFavorite: !product.isFavorite,
             source: source.rawValue
-        ))
+        )
+        analytics.track(event)
+
+        if let surfaceEvent = AnalyticsEvent.surfaceFavoriteToggled(
+            productID: product.id,
+            isFavorite: !product.isFavorite,
+            source: source.rawValue
+        ) {
+            analytics.track(surfaceEvent)
+        }
         FavoritesCacheManager.shared.saveLastInteraction()
     }
 
