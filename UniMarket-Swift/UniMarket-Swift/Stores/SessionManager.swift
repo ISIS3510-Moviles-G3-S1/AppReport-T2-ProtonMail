@@ -143,6 +143,7 @@ final class SessionManager: ObservableObject {
         isLoading = false
         UserProfileCache.shared.clear()
         ProfileInsightsLRU.shared.clear()
+        FavoritesCacheManager.shared.clearUserData()
         analytics.track(.signOut())
         analytics.reset()
     }

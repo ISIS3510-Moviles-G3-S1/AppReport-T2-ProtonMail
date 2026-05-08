@@ -48,4 +48,9 @@ final class FavoritesCacheManager {
     func removeFavorite(itemId: String) {
         saveFavorites(loadFavorites().filter { $0.id != itemId })
     }
+
+    func clearUserData() {
+        defaults.removeObject(forKey: favoritesKey)
+        defaults.removeObject(forKey: lastInteractionKey)
+    }
 }
