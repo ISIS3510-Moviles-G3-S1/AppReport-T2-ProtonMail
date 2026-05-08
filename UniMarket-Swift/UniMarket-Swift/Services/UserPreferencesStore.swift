@@ -1,4 +1,5 @@
 import Foundation
+import Combine
 
 // Persists user-configurable app settings to UserDefaults.
 // Each preference has a typed @Published property; writes flush to disk immediately on set.
