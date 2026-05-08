@@ -11,6 +11,7 @@ struct ProductDetailView: View {
     private let analytics = AnalyticsService.shared
     @EnvironmentObject private var chatStore: ChatStore
     @EnvironmentObject private var productStore: ProductStore
+    @EnvironmentObject private var session: SessionManager
 
     @StateObject private var vm: ProductDetailViewModel
     @StateObject private var networkMonitor = NetworkMonitor()
@@ -22,6 +23,7 @@ struct ProductDetailView: View {
     @State private var showGenerateQR = false
     @State private var showScanQR = false
 
+    private let product: Product
     private let onProductUpdated: ((Product) -> Void)?
     private let source: AnalyticsSurface
 
@@ -31,6 +33,7 @@ struct ProductDetailView: View {
         isOwnListing: Bool = false,
         onProductUpdated: ((Product) -> Void)? = nil
     ) {
+        self.product = product
         _vm = StateObject(wrappedValue: ProductDetailViewModel(product: product, isOwnListing: isOwnListing))
         self.source = source
         self.onProductUpdated = onProductUpdated
@@ -167,6 +170,7 @@ struct ProductDetailView: View {
                 analytics.track(surfaceEvent)
             }
             FavoritesCacheManager.shared.saveLastInteraction()
+            RecentlyViewedCache.shared.record(product, for: session.uid, isOwnListing: vm.isOwnListing)
         }
         .onReceive(productStore.$products) { products in
             guard let updatedProduct = products.first(where: { $0.id == vm.id }) else { return }
