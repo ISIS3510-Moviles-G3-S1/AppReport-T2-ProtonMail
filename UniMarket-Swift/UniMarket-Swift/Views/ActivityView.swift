@@ -33,6 +33,34 @@ struct ActivityView: View {
                     }
                     .padding(.horizontal)
 
+                    // BQ: last-interaction banner — message changes by inactivity bracket
+                    if !vm.feedbackMessage.isEmpty {
+                        HStack(spacing: 10) {
+                            Image(systemName: vm.lastInteractionDate == nil ? "sparkles"
+                                             : vm.userActivityState == .active ? "checkmark.circle.fill"
+                                             : vm.userActivityState == .idle ? "clock.fill"
+                                             : vm.userActivityState == .inactive ? "exclamationmark.circle.fill"
+                                             : "zzz")
+                                .foregroundStyle(vm.lastInteractionDate == nil ? AppTheme.accent
+                                                 : vm.userActivityState == .active ? Color.green
+                                                 : vm.userActivityState == .idle ? AppTheme.accent
+                                                 : vm.userActivityState == .inactive ? Color.orange
+                                                 : Color.red)
+                            Text(vm.feedbackMessage)
+                                .font(.poppinsRegular(13))
+                                .foregroundStyle(AppTheme.primaryText)
+                            Spacer()
+                        }
+                        .padding(12)
+                        .background(AppTheme.cardBackground)
+                        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                .stroke(Color.white.opacity(0.18), lineWidth: 1)
+                        )
+                        .padding(.horizontal)
+                    }
+
                     Picker("", selection: $vm.selectedTab) {
                         ForEach(ActivityViewModel.Tab.allCases, id: \.self) { tab in
                             Text(tab.rawValue).tag(tab)
@@ -56,10 +84,12 @@ struct ActivityView: View {
             }
             .refreshable {
                 vm.sync(products: productStore.products, currentUserID: session.user?.uid)
+                vm.refreshInteractionState()
             }
         }
         .task {
             vm.sync(products: productStore.products, currentUserID: session.user?.uid)
+            vm.refreshInteractionState()
         }
         .onReceive(productStore.$products) { products in
             vm.sync(products: products, currentUserID: session.user?.uid)
