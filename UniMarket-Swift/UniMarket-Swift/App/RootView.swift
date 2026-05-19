@@ -16,6 +16,7 @@ struct RootView: View {
     @EnvironmentObject var session: SessionManager
     @EnvironmentObject private var productStore: ProductStore
     @EnvironmentObject private var chatStore: ChatStore
+    @EnvironmentObject private var cartStore: CartStore
     @State private var authPath: [AuthRoute] = []
 
     var body: some View {
@@ -54,6 +55,8 @@ struct RootView: View {
                 if session.isLoggedIn {
                     chatStore.startObservingConversations()
                 }
+                cartStore.load(for: session.uid)
+                cartStore.reconcile(with: productStore.products)
             }
             .onChange(of: session.user?.uid) { previousUserID, currentUserID in
                 if let previousUserID, previousUserID != currentUserID {
@@ -62,9 +65,12 @@ struct RootView: View {
                     }
                 }
 
+                cartStore.load(for: currentUserID)
+                cartStore.reconcile(with: productStore.products)
                 syncListingReminder(for: currentUserID)
             }
-            .onChange(of: productStore.products) { _, _ in
+            .onChange(of: productStore.products) { _, products in
+                cartStore.reconcile(with: products)
                 syncListingReminder(for: session.user?.uid)
             }
             .frame(width: proxy.size.width, height: proxy.size.height)

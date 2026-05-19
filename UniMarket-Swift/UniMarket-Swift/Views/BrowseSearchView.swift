@@ -12,6 +12,9 @@ struct BrowseSearchView: View {
 
     @Binding var showFilters: Bool
 
+    var isInCart: (Product) -> Bool = { _ in false }
+    var onAddToCart: ((Product) -> Void)? = nil
+
     @ObservedObject private var network = NetworkMonitor.shared
     @ObservedObject private var prefs = UserPreferencesStore.shared
 
@@ -166,6 +169,10 @@ struct BrowseSearchView: View {
                     },
                     onTapCard: {
                         onSelectProduct(product)
+                    },
+                    isInCart: isInCart(product),
+                    onTapAddToCart: onAddToCart.map { addToCart in
+                        { addToCart(product) }
                     }
                 )
             }

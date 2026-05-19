@@ -11,6 +11,22 @@ struct ProductGridCard: View {
     let product: Product
     let onTapFavorite: () -> Void
     let onTapCard: () -> Void
+    let isInCart: Bool
+    let onTapAddToCart: (() -> Void)?
+
+    init(
+        product: Product,
+        onTapFavorite: @escaping () -> Void,
+        onTapCard: @escaping () -> Void,
+        isInCart: Bool = false,
+        onTapAddToCart: (() -> Void)? = nil
+    ) {
+        self.product = product
+        self.onTapFavorite = onTapFavorite
+        self.onTapCard = onTapCard
+        self.isInCart = isInCart
+        self.onTapAddToCart = onTapAddToCart
+    }
 
     private var carouselImageURLs: [String] {
         let urls = product.imageURLs
@@ -43,15 +59,31 @@ struct ProductGridCard: View {
 
                 HStack {
                     Spacer()
-                    Button(action: onTapFavorite) {
-                        Image(systemName: product.isFavorite ? "heart.fill" : "heart")
-                            .font(.poppinsSemiBold(16))
-                            .foregroundStyle(product.isFavorite ? AppTheme.accent : AppTheme.primaryText)
-                            .padding(10)
-                            .background(AppTheme.cardBackground.opacity(0.92))
-                            .clipShape(Circle())
+                    VStack(spacing: 8) {
+                        Button(action: onTapFavorite) {
+                            Image(systemName: product.isFavorite ? "heart.fill" : "heart")
+                                .font(.poppinsSemiBold(16))
+                                .foregroundStyle(product.isFavorite ? AppTheme.accent : AppTheme.primaryText)
+                                .padding(10)
+                                .background(AppTheme.cardBackground.opacity(0.92))
+                                .clipShape(Circle())
+                        }
+                        .buttonStyle(.plain)
+
+                        if let onTapAddToCart {
+                            Button(action: onTapAddToCart) {
+                                Image(systemName: isInCart ? "cart.fill" : "cart.badge.plus")
+                                    .font(.poppinsSemiBold(15))
+                                    .foregroundStyle(isInCart ? AppTheme.accent : AppTheme.primaryText)
+                                    .padding(10)
+                                    .background(AppTheme.cardBackground.opacity(0.92))
+                                    .clipShape(Circle())
+                            }
+                            .buttonStyle(.plain)
+                            .disabled(isInCart || product.status != .active)
+                            .accessibilityLabel(isInCart ? "In cart" : "Add to cart")
+                        }
                     }
-                    .buttonStyle(.plain)
                     .padding(8)
                 }
             }

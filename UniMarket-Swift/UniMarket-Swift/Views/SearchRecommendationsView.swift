@@ -5,6 +5,8 @@ struct SearchRecommendationsView: View {
     let onSelectRecentSearch: (String) -> Void
     let onToggleFavorite: (Product) -> Void
     let onSelectProduct: (Product) -> Void
+    var isInCart: (Product) -> Bool = { _ in false }
+    var onAddToCart: ((Product) -> Void)? = nil
 
     private let columns = [
         GridItem(.flexible(), spacing: 12),
@@ -59,6 +61,10 @@ struct SearchRecommendationsView: View {
                                     },
                                     onTapCard: {
                                         onSelectProduct(product)
+                                    },
+                                    isInCart: isInCart(product),
+                                    onTapAddToCart: onAddToCart.map { addToCart in
+                                        { addToCart(product) }
                                     }
                                 )
                             }
