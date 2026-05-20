@@ -6,6 +6,7 @@ struct CheckoutView: View {
     @EnvironmentObject private var cartStore: CartStore
     @EnvironmentObject private var session: SessionManager
     @StateObject private var viewModel = CheckoutViewModel()
+    @State private var checkoutTask: Task<Void, Never>?
 
     var body: some View {
         ZStack {
@@ -45,6 +46,10 @@ struct CheckoutView: View {
             if viewModel.fullName.isEmpty {
                 viewModel.fullName = session.currentUser?.displayName ?? session.user?.displayName ?? ""
             }
+        }
+        .onDisappear {
+            checkoutTask?.cancel()
+            checkoutTask = nil
         }
     }
 
@@ -246,12 +251,7 @@ struct CheckoutView: View {
 
     private var submitButton: some View {
         Button {
-            Task {
-                let completed = await viewModel.submit(items: cartStore.items, userID: session.uid)
-                if completed {
-                    cartStore.clear()
-                }
-            }
+            startCheckout()
         } label: {
             Group {
                 if viewModel.isProcessing {
@@ -270,6 +270,22 @@ struct CheckoutView: View {
         }
         .buttonStyle(.plain)
         .disabled(!viewModel.canSubmit)
+    }
+
+    private func startCheckout() {
+        checkoutTask?.cancel()
+        let items = cartStore.items
+        let userID = session.uid
+
+        checkoutTask = Task { @MainActor in
+            let completed = await viewModel.submit(items: items, userID: userID)
+            guard !Task.isCancelled else { return }
+
+            if completed {
+                cartStore.clear()
+            }
+            checkoutTask = nil
+        }
     }
 
     private var successState: some View {
