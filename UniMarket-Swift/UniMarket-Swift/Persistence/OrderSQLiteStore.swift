@@ -23,9 +23,10 @@ enum OrderSQLiteStoreError: LocalizedError {
     }
 }
 
-final class OrderSQLiteStore {
+final class OrderSQLiteStore: @unchecked Sendable {
     static let shared = OrderSQLiteStore()
 
+    private let queue = DispatchQueue(label: "com.unimarket.orders.sqlite")
     private let databaseURL: URL
     private var db: OpaquePointer?
 
@@ -38,6 +39,37 @@ final class OrderSQLiteStore {
     }
 
     func saveOrder(
+        orderNumber: String,
+        userID: String?,
+        items cartItems: [CartItem],
+        buyerName: String,
+        buyerEmail: String,
+        pickupLocation: String,
+        paymentLastFour: String,
+        paymentToken: String
+    ) async throws -> Order {
+        try await withCheckedThrowingContinuation { continuation in
+            queue.async {
+                do {
+                    let order = try self.saveOrderOnQueue(
+                        orderNumber: orderNumber,
+                        userID: userID,
+                        items: cartItems,
+                        buyerName: buyerName,
+                        buyerEmail: buyerEmail,
+                        pickupLocation: pickupLocation,
+                        paymentLastFour: paymentLastFour,
+                        paymentToken: paymentToken
+                    )
+                    continuation.resume(returning: order)
+                } catch {
+                    continuation.resume(throwing: error)
+                }
+            }
+        }
+    }
+
+    private func saveOrderOnQueue(
         orderNumber: String,
         userID: String?,
         items cartItems: [CartItem],
@@ -92,7 +124,20 @@ final class OrderSQLiteStore {
         }
     }
 
-    func orders(for userID: String?) throws -> [Order] {
+    func orders(for userID: String?) async throws -> [Order] {
+        try await withCheckedThrowingContinuation { continuation in
+            queue.async {
+                do {
+                    let orders = try self.ordersOnQueue(for: userID)
+                    continuation.resume(returning: orders)
+                } catch {
+                    continuation.resume(throwing: error)
+                }
+            }
+        }
+    }
+
+    private func ordersOnQueue(for userID: String?) throws -> [Order] {
         try openIfNeeded()
 
         let sql = """

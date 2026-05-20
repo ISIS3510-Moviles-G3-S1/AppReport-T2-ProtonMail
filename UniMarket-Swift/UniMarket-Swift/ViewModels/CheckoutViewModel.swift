@@ -129,7 +129,7 @@ final class CheckoutViewModel: ObservableObject {
         orderNumber = generatedOrderNumber
 
         do {
-            _ = try OrderSQLiteStore.shared.saveOrder(
+            _ = try await OrderSQLiteStore.shared.saveOrder(
                 orderNumber: generatedOrderNumber,
                 userID: userID,
                 items: items,
