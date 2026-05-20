@@ -16,9 +16,12 @@ struct UploadProductView: View {
     private let analytics = AnalyticsService.shared
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var productStore: ProductStore
+    @EnvironmentObject private var session: SessionManager
+    @ObservedObject private var networkMonitor = NetworkMonitor.shared
     @StateObject private var vm = UploadProductViewModel()
 
     @State private var showCamera = false
+    @State private var showDrafts = false
     @State private var showClothingAnalysis = false
     @State private var isTagPickerExpanded = false
     @State private var hasAppliedAIDraft = false
@@ -40,6 +43,9 @@ struct UploadProductView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
                     header
+                    if !networkMonitor.isConnected {
+                        offlineDraftBanner
+                    }
                     photoSection
 
                     labeledTextField(title: "Title", placeholder: "Ex: Vintage Jacket", text: $vm.title)
@@ -139,10 +145,25 @@ struct UploadProductView: View {
                 await vm.loadSelectedPhotos()
             }
         }
+        .onChange(of: networkMonitor.isConnected) { wasConnected, isConnected in
+            guard wasConnected, !isConnected else { return }
+            saveDraft(message: "Connection lost — saved this form to Drafts.")
+        }
+        .onDisappear {
+            guard !networkMonitor.isConnected else { return }
+            saveDraft(message: "Draft saved.")
+        }
         .sheet(isPresented: $showCamera) {
             ImagePicker(source: .camera) { uiImage in
                 vm.addImageFromCamera(uiImage)
                 analytics.track(.listingPhotosSelected(count: vm.selectedImages.count, source: "camera"))
+            }
+        }
+        .sheet(isPresented: $showDrafts) {
+            ListingDraftsView(userID: session.uid) { draft in
+                Task {
+                    await vm.restoreDraft(draft)
+                }
             }
         }
         .navigationDestination(isPresented: $showClothingAnalysis) {
@@ -151,14 +172,69 @@ struct UploadProductView: View {
     }
 
     private var header: some View {
-        HStack {
+        HStack(spacing: 12) {
             Text("Upload product")
                 .font(.poppinsBold(24))
                 .foregroundStyle(AppTheme.primaryText)
             Spacer()
+            Button {
+                showDrafts = true
+            } label: {
+                HStack(spacing: 6) {
+                    Image(systemName: "doc.text")
+                    Text("Drafts")
+                }
+                .font(.poppinsSemiBold(13))
+                .foregroundStyle(AppTheme.accent)
+            }
+            .buttonStyle(.plain)
+
             Button("Close") { dismiss() }
                 .font(.poppinsRegular(14))
                 .foregroundStyle(AppTheme.secondaryText)
+        }
+    }
+
+    private var offlineDraftBanner: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "wifi.slash")
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundStyle(AppTheme.primaryText)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Offline draft mode")
+                    .font(.poppinsSemiBold(13))
+                    .foregroundStyle(AppTheme.primaryText)
+                Text("This listing can be saved to Drafts until connection returns.")
+                    .font(.poppinsRegular(11))
+                    .foregroundStyle(AppTheme.secondaryText)
+            }
+
+            Spacer(minLength: 0)
+
+            Button("Save Draft") {
+                saveDraft(message: "Draft saved.")
+            }
+            .font(.poppinsSemiBold(12))
+            .foregroundStyle(AppTheme.primaryText)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 7)
+            .background(vm.hasDraftContent ? AppTheme.accent : AppTheme.secondaryText.opacity(0.35))
+            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+            .disabled(!vm.hasDraftContent)
+        }
+        .padding(12)
+        .background(AppTheme.cardBackground)
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .stroke(AppTheme.accent.opacity(0.25), lineWidth: 1)
+        )
+    }
+
+    private func saveDraft(message: String) {
+        Task {
+            await vm.saveDraftIfNeeded(for: session.uid, message: message)
         }
     }
 

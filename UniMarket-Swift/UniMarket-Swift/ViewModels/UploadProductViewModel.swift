@@ -15,6 +15,7 @@ enum PostOutcome {
 
 final class UploadProductViewModel: ObservableObject {
     private let analytics = AnalyticsService.shared
+    private var activeDraftID: String?
     @Published var selectedItems: [PhotosPickerItem] = []
     @Published var selectedImages: [Image] = []
     @Published var imagesData: [Data] = []
@@ -104,6 +105,16 @@ final class UploadProductViewModel: ObservableObject {
         Int(price) != nil
     }
 
+    var hasDraftContent: Bool {
+        !imagesData.isEmpty ||
+        !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ||
+        !price.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ||
+        condition != "Good" ||
+        !description.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ||
+        !selectedTags.isEmpty ||
+        !customTagInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
     func postProduct(using productStore: ProductStore) async -> PostOutcome {
         guard canPost, let parsedPrice = Int(price) else { return .failed }
         analytics.track(.listingSubmitAttempt(
@@ -138,6 +149,7 @@ final class UploadProductViewModel: ObservableObject {
         if !isConnected, let uid = Auth.auth().currentUser?.uid {
             await PendingListingsSyncer.shared.enqueue(input: input, userID: uid)
             analytics.track(.listingSubmitFailed(reason: "queued_offline"))
+            await deleteActiveDraftIfNeeded(for: uid)
             await MainActor.run {
                 infoMessage = "You're offline — we saved your listing and will publish it as soon as you're back online."
                 resetForm()
@@ -148,6 +160,7 @@ final class UploadProductViewModel: ObservableObject {
         do {
             let product = try await productStore.createProduct(input: input)
             await ListingReminderService.shared.recordListing(for: product.sellerId, at: product.createdAt)
+            await deleteActiveDraftIfNeeded(for: product.sellerId)
             await MainActor.run { resetForm() }
             return .published
         } catch {
@@ -157,6 +170,7 @@ final class UploadProductViewModel: ObservableObject {
             if Self.isLikelyNetworkError(error), let uid = Auth.auth().currentUser?.uid {
                 await PendingListingsSyncer.shared.enqueue(input: input, userID: uid)
                 analytics.track(.listingSubmitFailed(reason: "queued_after_network_error"))
+                await deleteActiveDraftIfNeeded(for: uid)
                 await MainActor.run {
                     infoMessage = "We couldn't reach the server — your listing is saved and we'll retry when you're back online."
                     resetForm()
@@ -167,6 +181,84 @@ final class UploadProductViewModel: ObservableObject {
             await MainActor.run { errorMessage = error.localizedDescription }
             return .failed
         }
+    }
+
+    func saveDraftIfNeeded(for userID: String?, message: String) async {
+        guard let userID, hasDraftContent else { return }
+
+        let draftID = activeDraftID
+        let draftTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        let draftPrice = price.trimmingCharacters(in: .whitespacesAndNewlines)
+        let draftCondition = condition
+        let draftDescription = description.trimmingCharacters(in: .whitespacesAndNewlines)
+        let draftTags = selectedTags
+        let draftImagesData = imagesData
+
+        do {
+            let savedDraft = try await ListingDraftStore.shared.save(
+                draftID: draftID,
+                userID: userID,
+                title: draftTitle,
+                priceText: draftPrice,
+                conditionTag: draftCondition,
+                listingDescription: draftDescription,
+                tags: draftTags,
+                imagesData: draftImagesData
+            )
+            await MainActor.run {
+                activeDraftID = savedDraft.draftID
+                infoMessage = message
+                errorMessage = nil
+            }
+        } catch {
+            await MainActor.run {
+                errorMessage = "Could not save this draft."
+            }
+        }
+    }
+
+    func restoreDraft(_ draft: ListingDraft) async {
+        do {
+            let payload = try await ListingDraftStore.shared.materialize(draft)
+            await MainActor.run {
+                applyDraftPayload(payload)
+                infoMessage = "Draft loaded."
+                errorMessage = nil
+            }
+        } catch {
+            await MainActor.run {
+                errorMessage = "Could not open this draft."
+            }
+        }
+    }
+
+    private func deleteActiveDraftIfNeeded(for userID: String) async {
+        guard let activeDraftID else { return }
+        let draftID = activeDraftID
+        try? await ListingDraftStore.shared.remove(draftID: draftID, userID: userID)
+        await MainActor.run {
+            if self.activeDraftID == draftID {
+                self.activeDraftID = nil
+            }
+        }
+    }
+
+    @MainActor
+    private func applyDraftPayload(_ payload: ListingDraftPayload) {
+        activeDraftID = payload.draft.draftID
+        selectedItems = []
+        imagesData = payload.imagesData
+        selectedImages = payload.imagesData.compactMap { data in
+            guard let uiImage = UIImage(data: data) else { return nil }
+            return Image(uiImage: uiImage)
+        }
+        title = payload.draft.title
+        price = payload.draft.priceText
+        condition = payload.draft.conditionTag
+        description = payload.draft.listingDescription
+        selectedTags = payload.draft.tags
+        tagSearchText = ""
+        customTagInput = ""
     }
 
     private static func isLikelyNetworkError(_ error: Error) -> Bool {
@@ -195,6 +287,7 @@ final class UploadProductViewModel: ObservableObject {
         selectedTags = []
         tagSearchText = ""
         customTagInput = ""
+        activeDraftID = nil
         errorMessage = nil
         // Note: we deliberately don't clear infoMessage here — the post-publish
         // confirmation is shown by the upload view based on the PostOutcome.
