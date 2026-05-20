@@ -38,6 +38,7 @@ struct CheckoutView: View {
         .navigationTitle("Checkout")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
+            viewModel.loadSavedDetails(for: session.uid)
             if viewModel.email.isEmpty {
                 viewModel.email = session.user?.email ?? ""
             }
@@ -57,7 +58,7 @@ struct CheckoutView: View {
                 Text("Demo payment")
                     .font(.poppinsSemiBold(14))
                     .foregroundStyle(AppTheme.primaryText)
-                Text("No card is charged or saved.")
+                Text("Only masked demo card info is saved locally.")
                     .font(.poppinsRegular(12))
                     .foregroundStyle(AppTheme.secondaryText)
             }
@@ -131,17 +132,23 @@ struct CheckoutView: View {
 
     private var paymentSection: some View {
         formSection(title: "Payment", icon: "creditcard") {
+            if let savedPaymentSummary = viewModel.savedPaymentSummary {
+                savedPaymentCard(savedPaymentSummary)
+            }
+
             checkoutTextField("Cardholder name", text: $viewModel.cardholderName, contentType: .name)
 
-            checkoutTextField(
-                "Card number",
-                text: Binding(
-                    get: { viewModel.cardNumber },
-                    set: { viewModel.updateCardNumber($0) }
-                ),
-                keyboardType: .numberPad,
-                contentType: .creditCardNumber
-            )
+            if !viewModel.usesSavedPayment {
+                checkoutTextField(
+                    "Card number",
+                    text: Binding(
+                        get: { viewModel.cardNumber },
+                        set: { viewModel.updateCardNumber($0) }
+                    ),
+                    keyboardType: .numberPad,
+                    contentType: .creditCardNumber
+                )
+            }
 
             HStack(spacing: 10) {
                 checkoutTextField(
@@ -153,14 +160,16 @@ struct CheckoutView: View {
                     keyboardType: .numberPad
                 )
 
-                checkoutTextField(
-                    "CVV",
-                    text: Binding(
-                        get: { viewModel.securityCode },
-                        set: { viewModel.updateSecurityCode($0) }
-                    ),
-                    keyboardType: .numberPad
-                )
+                if !viewModel.usesSavedPayment {
+                    checkoutTextField(
+                        "CVV",
+                        text: Binding(
+                            get: { viewModel.securityCode },
+                            set: { viewModel.updateSecurityCode($0) }
+                        ),
+                        keyboardType: .numberPad
+                    )
+                }
             }
 
             checkoutTextField(
@@ -172,13 +181,73 @@ struct CheckoutView: View {
                 keyboardType: .numberPad,
                 contentType: .postalCode
             )
+
+            Toggle(isOn: $viewModel.rememberCheckoutDetails) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Remember demo checkout details")
+                        .font(.poppinsSemiBold(13))
+                        .foregroundStyle(AppTheme.primaryText)
+                    Text("Stores contact info and a masked card token in UserDefaults.")
+                        .font(.poppinsRegular(11))
+                        .foregroundStyle(AppTheme.secondaryText)
+                }
+            }
+            .tint(AppTheme.accent)
         }
+    }
+
+    private func savedPaymentCard(_ summary: String) -> some View {
+        HStack(spacing: 10) {
+            Image(systemName: viewModel.usesSavedPayment ? "checkmark.circle.fill" : "creditcard")
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundStyle(viewModel.usesSavedPayment ? AppTheme.accent : AppTheme.secondaryText)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(summary)
+                    .font(.poppinsSemiBold(13))
+                    .foregroundStyle(AppTheme.primaryText)
+                Text(viewModel.usesSavedPayment ? "Using saved demo card" : "Saved locally as a masked token")
+                    .font(.poppinsRegular(11))
+                    .foregroundStyle(AppTheme.secondaryText)
+            }
+
+            Spacer()
+
+            if viewModel.usesSavedPayment {
+                Button("New") {
+                    viewModel.enterNewCard()
+                }
+                .font(.poppinsSemiBold(12))
+                .foregroundStyle(AppTheme.accent)
+            } else {
+                Button("Use") {
+                    viewModel.useSavedPayment()
+                }
+                .font(.poppinsSemiBold(12))
+                .foregroundStyle(AppTheme.accent)
+            }
+
+            Button {
+                viewModel.forgetSavedDetails(for: session.uid)
+            } label: {
+                Image(systemName: "trash")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(.red)
+                    .frame(width: 28, height: 28)
+                    .background(AppTheme.background)
+                    .clipShape(Circle())
+            }
+            .accessibilityLabel("Forget saved checkout details")
+        }
+        .padding(12)
+        .background(AppTheme.background)
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 
     private var submitButton: some View {
         Button {
             Task {
-                let completed = await viewModel.submit(items: cartStore.items)
+                let completed = await viewModel.submit(items: cartStore.items, userID: session.uid)
                 if completed {
                     cartStore.clear()
                 }

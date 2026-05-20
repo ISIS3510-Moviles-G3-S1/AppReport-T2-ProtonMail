@@ -123,10 +123,30 @@ final class CheckoutViewModel: ObservableObject {
 
         isProcessing = true
         try? await Task.sleep(nanoseconds: 800_000_000)
-        orderNumber = "UM-\(String(UUID().uuidString.prefix(8)).uppercased())"
+
+        let generatedOrderNumber = "UM-\(String(UUID().uuidString.prefix(8)).uppercased())"
+        let paymentSnapshot = currentPaymentSnapshot()
+        orderNumber = generatedOrderNumber
+
+        do {
+            _ = try OrderSQLiteStore.shared.saveOrder(
+                orderNumber: generatedOrderNumber,
+                userID: userID,
+                items: items,
+                buyerName: trimmed(fullName),
+                buyerEmail: trimmed(email),
+                pickupLocation: trimmed(pickupLocation),
+                paymentLastFour: paymentSnapshot.lastFour,
+                paymentToken: paymentSnapshot.token
+            )
+        } catch {
+            validationMessage = error.localizedDescription
+            isProcessing = false
+            return false
+        }
 
         if rememberCheckoutDetails {
-            saveDetails(for: userID)
+            saveDetails(for: userID, paymentSnapshot: paymentSnapshot)
         } else if hasSavedPayment {
             forgetSavedDetails(for: userID)
         }
@@ -194,28 +214,25 @@ final class CheckoutViewModel: ObservableObject {
         return true
     }
 
-    private func saveDetails(for userID: String?) {
-        let cardLastFour: String
-        let paymentToken: String
-
+    private func currentPaymentSnapshot() -> PaymentSnapshot {
         if usesSavedPayment, let savedDetails {
-            cardLastFour = savedDetails.cardLastFour
-            paymentToken = savedDetails.paymentToken
-        } else {
-            let cardDigits = cardNumber.filter(\.isNumber)
-            cardLastFour = String(cardDigits.suffix(4))
-            paymentToken = "demo_\(UUID().uuidString)"
+            return PaymentSnapshot(lastFour: savedDetails.cardLastFour, token: savedDetails.paymentToken)
         }
 
+        let cardDigits = cardNumber.filter(\.isNumber)
+        return PaymentSnapshot(lastFour: String(cardDigits.suffix(4)), token: "demo_\(UUID().uuidString)")
+    }
+
+    private func saveDetails(for userID: String?, paymentSnapshot: PaymentSnapshot) {
         let details = SavedCheckoutDetails(
             fullName: trimmed(fullName),
             email: trimmed(email),
             pickupLocation: trimmed(pickupLocation),
             cardholderName: trimmed(cardholderName),
-            cardLastFour: cardLastFour,
+            cardLastFour: paymentSnapshot.lastFour,
             expiryDate: expiryDate,
             billingZip: billingZip,
-            paymentToken: paymentToken,
+            paymentToken: paymentSnapshot.token,
             updatedAt: .now
         )
 
@@ -261,6 +278,11 @@ final class CheckoutViewModel: ObservableObject {
     private func trimmed(_ value: String) -> String {
         value.trimmingCharacters(in: .whitespacesAndNewlines)
     }
+}
+
+private struct PaymentSnapshot {
+    let lastFour: String
+    let token: String
 }
 
 private struct SavedCheckoutDetails: Codable {
