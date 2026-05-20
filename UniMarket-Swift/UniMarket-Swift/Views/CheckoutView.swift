@@ -2,6 +2,7 @@ import FirebaseAuth
 import SwiftUI
 
 struct CheckoutView: View {
+    private let analytics = AnalyticsService.shared
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var cartStore: CartStore
     @EnvironmentObject private var session: SessionManager
@@ -282,10 +283,23 @@ struct CheckoutView: View {
             guard !Task.isCancelled else { return }
 
             if completed {
+                trackDemoOrderPlaced(items: items)
                 cartStore.clear()
             }
             checkoutTask = nil
         }
+    }
+
+    private func trackDemoOrderPlaced(items: [CartItem]) {
+        let aiStylistItems = items.filter { $0.source == AnalyticsSurface.aiStylist.rawValue }
+        analytics.track(.demoOrderPlaced(
+            orderNumber: viewModel.orderNumber,
+            itemCount: items.count,
+            subtotal: items.reduce(0) { $0 + $1.product.price },
+            aiStylistItemCount: aiStylistItems.count,
+            aiStylistSubtotal: aiStylistItems.reduce(0) { $0 + $1.product.price },
+            usedSavedPayment: viewModel.usesSavedPayment
+        ))
     }
 
     private var successState: some View {

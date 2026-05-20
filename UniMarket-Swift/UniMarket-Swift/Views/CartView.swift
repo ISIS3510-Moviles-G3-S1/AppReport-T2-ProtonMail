@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct CartView: View {
+    private let analytics = AnalyticsService.shared
     @EnvironmentObject private var cartStore: CartStore
     @EnvironmentObject private var productStore: ProductStore
     @EnvironmentObject private var session: SessionManager
@@ -58,7 +59,7 @@ struct CartView: View {
             cartStore.reconcile(with: products)
         }
         .navigationDestination(item: $selectedProduct) { product in
-            ProductDetailView(product: product)
+            ProductDetailView(product: product, source: .cart)
         }
         .confirmationDialog(
             "Clear cart?",
@@ -139,14 +140,37 @@ struct CartView: View {
             }
             .buttonStyle(.plain)
             .disabled(cartStore.hasUnavailableItems)
+            .simultaneousGesture(TapGesture().onEnded {
+                guard !cartStore.hasUnavailableItems else { return }
+                trackCheckoutStarted()
+            })
         }
         .padding(16)
         .background(AppTheme.cardBackground)
         .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .stroke(Color.white.opacity(0.18), lineWidth: 1)
+            .stroke(Color.white.opacity(0.18), lineWidth: 1)
         )
+    }
+
+    private var aiStylistItemCount: Int {
+        cartStore.items.filter { $0.source == AnalyticsSurface.aiStylist.rawValue }.count
+    }
+
+    private var aiStylistSubtotal: Int {
+        cartStore.items
+            .filter { $0.source == AnalyticsSurface.aiStylist.rawValue }
+            .reduce(0) { $0 + $1.product.price }
+    }
+
+    private func trackCheckoutStarted() {
+        analytics.track(.checkoutStarted(
+            itemCount: cartStore.itemCount,
+            subtotal: cartStore.subtotal,
+            aiStylistItemCount: aiStylistItemCount,
+            aiStylistSubtotal: aiStylistSubtotal
+        ))
     }
 }
 

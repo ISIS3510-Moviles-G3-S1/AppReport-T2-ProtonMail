@@ -170,7 +170,7 @@ struct SearchView: View {
                 cartStore.contains(productID: product.id)
             },
             onAddToCart: { product in
-                addToCart(product)
+                addToCart(product, source: .browseSearch)
             }
         )
     }
@@ -193,7 +193,7 @@ struct SearchView: View {
                 cartStore.contains(productID: product.id)
             },
             onAddToCart: { product in
-                addToCart(product)
+                addToCart(product, source: .searchRecommendations)
             }
         )
     }
@@ -238,9 +238,22 @@ struct SearchView: View {
         }
     }
 
-    private func addToCart(_ product: Product) {
-        let result = cartStore.add(product, currentUserID: session.uid)
-        if result != .added {
+    private func addToCart(_ product: Product, source: AnalyticsSurface) {
+        let result = cartStore.add(product, currentUserID: session.uid, source: source.rawValue)
+        if result == .added {
+            analytics.track(.cartItemAdded(
+                productID: product.id,
+                price: product.price,
+                source: source.rawValue,
+                cartSize: cartStore.itemCount,
+                containsAIStylistItem: cartStore.items.contains { $0.source == AnalyticsSurface.aiStylist.rawValue }
+            ))
+        } else {
+            analytics.track(.cartItemAddRejected(
+                productID: product.id,
+                source: source.rawValue,
+                reason: result.analyticsReason
+            ))
             cartMessage = result.message
         }
     }

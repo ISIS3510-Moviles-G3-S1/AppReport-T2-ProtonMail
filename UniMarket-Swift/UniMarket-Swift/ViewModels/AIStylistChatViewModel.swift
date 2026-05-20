@@ -24,6 +24,7 @@ final class AIStylistChatViewModel: ObservableObject {
     private let chatbot: StylistChatbot
     private let fallbackChatbot: StylistChatbot = MockStylistChatbotCreator().makeChatbot()
     private let conversationStore = AIStylistConversationFileStore()
+    private let analytics = AnalyticsService.shared
     private var createdAt = Date()
 
     init(conversationID: String? = nil, creator: StylistChatbotCreator? = nil) {
@@ -57,9 +58,17 @@ final class AIStylistChatViewModel: ObservableObject {
         errorMessage = nil
 
         let request = StylistChatRequest(prompt: userMessage, catalog: catalog, referenceImage: referenceImage)
+        let startedAt = Date()
+        analytics.track(.aiStylistPromptSent(
+            conversationID: conversationID,
+            promptLength: userMessage.count,
+            hasReferenceImage: referenceImage != nil,
+            catalogCount: catalog.count,
+            mode: prefersOfflineMode ? "offline" : "live"
+        ))
 
         if prefersOfflineMode {
-            await sendOfflineResponse(for: request)
+            await sendOfflineResponse(for: request, startedAt: startedAt)
             return
         }
 
@@ -71,6 +80,11 @@ final class AIStylistChatViewModel: ObservableObject {
                 suggestedProducts: response.suggestedProducts,
                 attachedImage: nil
             ))
+            trackResponse(
+                source: "live",
+                suggestedProductCount: response.suggestedProducts.count,
+                startedAt: startedAt
+            )
             persistConversation()
         } catch {
             if let response = try? await fallbackChatbot.respond(to: request) {
@@ -80,6 +94,11 @@ final class AIStylistChatViewModel: ObservableObject {
                     suggestedProducts: response.suggestedProducts,
                     attachedImage: nil
                 ))
+                trackResponse(
+                    source: "demo_fallback",
+                    suggestedProductCount: response.suggestedProducts.count,
+                    startedAt: startedAt
+                )
                 persistConversation()
             }
             errorMessage = "Live AI was unavailable, so the stylist used demo mode."
@@ -88,7 +107,7 @@ final class AIStylistChatViewModel: ObservableObject {
         isSending = false
     }
 
-    private func sendOfflineResponse(for request: StylistChatRequest) async {
+    private func sendOfflineResponse(for request: StylistChatRequest, startedAt: Date) async {
         if let response = try? await fallbackChatbot.respond(to: request) {
             messages.append(AIStylistMessage(
                 role: .assistant,
@@ -96,10 +115,24 @@ final class AIStylistChatViewModel: ObservableObject {
                 suggestedProducts: response.suggestedProducts,
                 attachedImage: nil
             ))
+            trackResponse(
+                source: "offline_demo",
+                suggestedProductCount: response.suggestedProducts.count,
+                startedAt: startedAt
+            )
             persistConversation()
         }
         errorMessage = "You're offline, so the stylist is using local demo mode."
         isSending = false
+    }
+
+    private func trackResponse(source: String, suggestedProductCount: Int, startedAt: Date) {
+        analytics.track(.aiStylistResponseReceived(
+            conversationID: conversationID,
+            responseSource: source,
+            suggestedProductCount: suggestedProductCount,
+            durationMs: Int(Date().timeIntervalSince(startedAt) * 1_000)
+        ))
     }
 
     private func loadConversation(id: String) async {
