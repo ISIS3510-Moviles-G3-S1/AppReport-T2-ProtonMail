@@ -26,11 +26,13 @@ final class CartStore: ObservableObject {
     @Published private(set) var items: [CartItem] = []
 
     private let defaults: UserDefaults
+    private let memoryCache: CartContentsCache
     private let storageKeyPrefix = "unimarket.cart.items"
     private var activeUserID: String?
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
+        self.memoryCache = CartContentsCache.shared
         load(for: nil)
     }
 
@@ -123,17 +125,25 @@ final class CartStore: ObservableObject {
     }
 
     private func loadFromStorage() {
+        if let cachedItems = memoryCache.items(for: storageKey) {
+            items = cachedItems
+            return
+        }
+
         guard let data = defaults.data(forKey: storageKey),
               let decodedItems = try? JSONDecoder().decode([CartItem].self, from: data)
         else {
             items = []
+            memoryCache.store([], for: storageKey)
             return
         }
 
         items = decodedItems
+        memoryCache.store(decodedItems, for: storageKey)
     }
 
     private func saveToStorage() {
+        memoryCache.store(items, for: storageKey)
         guard let data = try? JSONEncoder().encode(items) else { return }
         defaults.set(data, forKey: storageKey)
     }
