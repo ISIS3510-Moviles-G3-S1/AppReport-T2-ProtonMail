@@ -4,6 +4,8 @@ import UIKit
 #endif
 
 struct AIStylistChatView: View {
+    private let analytics = AnalyticsService.shared
+    private let initialConversationID: String?
     @EnvironmentObject private var productStore: ProductStore
     @EnvironmentObject private var session: SessionManager
     @Environment(\.hideTabBar) private var hideTabBar
@@ -13,6 +15,7 @@ struct AIStylistChatView: View {
     @State private var draftMessage = ""
     @State private var selectedReferenceImage: UIImage?
     @State private var showPhotoLibrary = false
+    @State private var hasTrackedChatView = false
 
     private let promptSuggestions = [
         "Give me a casual campus outfit",
@@ -22,6 +25,7 @@ struct AIStylistChatView: View {
     ]
 
     init(conversationID: String? = nil) {
+        self.initialConversationID = conversationID
         _viewModel = StateObject(wrappedValue: AIStylistChatViewModel(conversationID: conversationID))
     }
 
@@ -84,6 +88,7 @@ struct AIStylistChatView: View {
             withAnimation {
                 hideTabBar.wrappedValue = true
             }
+            trackChatViewedIfNeeded()
         }
         .sheet(isPresented: $showPhotoLibrary) {
             ImagePicker(source: .photoLibrary) { image in
@@ -191,9 +196,9 @@ struct AIStylistChatView: View {
                         .font(.poppinsSemiBold(12))
                         .foregroundStyle(AppTheme.secondaryText)
 
-                    ForEach(message.suggestedProducts, id: \.id) { product in
+                    ForEach(Array(message.suggestedProducts.enumerated()), id: \.offset) { index, product in
                         NavigationLink {
-                            ProductDetailView(product: product)
+                            ProductDetailView(product: product, source: .aiStylist)
                         } label: {
                             HStack(spacing: 12) {
                                 CachedRemoteImageView(urlString: product.primaryImageURL ?? "")
@@ -216,11 +221,33 @@ struct AIStylistChatView: View {
                             .background(AppTheme.cardBackground)
                             .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                         }
+                        .simultaneousGesture(TapGesture().onEnded {
+                            trackSuggestionSelected(message: message, product: product, rank: index + 1)
+                        })
                     }
                 }
             }
         }
         .frame(maxWidth: .infinity, alignment: message.role == .user ? .trailing : .leading)
+    }
+
+    private func trackChatViewedIfNeeded() {
+        guard !hasTrackedChatView else { return }
+        analytics.track(.aiStylistChatViewed(
+            conversationID: viewModel.conversationID ?? initialConversationID,
+            existingConversation: initialConversationID != nil
+        ))
+        hasTrackedChatView = true
+    }
+
+    private func trackSuggestionSelected(message: AIStylistMessage, product: Product, rank: Int) {
+        analytics.track(.aiStylistSuggestionSelected(
+            conversationID: viewModel.conversationID ?? initialConversationID,
+            messageID: message.id.uuidString,
+            productID: product.id,
+            rank: rank,
+            price: product.price
+        ))
     }
 
     private var inputBar: some View {

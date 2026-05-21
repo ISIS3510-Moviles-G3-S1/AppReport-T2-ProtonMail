@@ -123,6 +123,10 @@ final class CheckoutViewModel: ObservableObject {
 
         isProcessing = true
         try? await Task.sleep(nanoseconds: 800_000_000)
+        guard !Task.isCancelled else {
+            isProcessing = false
+            return false
+        }
 
         let generatedOrderNumber = "UM-\(String(UUID().uuidString.prefix(8)).uppercased())"
         let paymentSnapshot = currentPaymentSnapshot()

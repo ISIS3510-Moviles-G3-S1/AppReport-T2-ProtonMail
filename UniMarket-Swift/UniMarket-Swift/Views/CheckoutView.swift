@@ -2,10 +2,12 @@ import FirebaseAuth
 import SwiftUI
 
 struct CheckoutView: View {
+    private let analytics = AnalyticsService.shared
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var cartStore: CartStore
     @EnvironmentObject private var session: SessionManager
     @StateObject private var viewModel = CheckoutViewModel()
+    @State private var checkoutTask: Task<Void, Never>?
 
     var body: some View {
         ZStack {
@@ -45,6 +47,10 @@ struct CheckoutView: View {
             if viewModel.fullName.isEmpty {
                 viewModel.fullName = session.currentUser?.displayName ?? session.user?.displayName ?? ""
             }
+        }
+        .onDisappear {
+            checkoutTask?.cancel()
+            checkoutTask = nil
         }
     }
 
@@ -246,12 +252,7 @@ struct CheckoutView: View {
 
     private var submitButton: some View {
         Button {
-            Task {
-                let completed = await viewModel.submit(items: cartStore.items, userID: session.uid)
-                if completed {
-                    cartStore.clear()
-                }
-            }
+            startCheckout()
         } label: {
             Group {
                 if viewModel.isProcessing {
@@ -270,6 +271,35 @@ struct CheckoutView: View {
         }
         .buttonStyle(.plain)
         .disabled(!viewModel.canSubmit)
+    }
+
+    private func startCheckout() {
+        checkoutTask?.cancel()
+        let items = cartStore.items
+        let userID = session.uid
+
+        checkoutTask = Task { @MainActor in
+            let completed = await viewModel.submit(items: items, userID: userID)
+            guard !Task.isCancelled else { return }
+
+            if completed {
+                trackDemoOrderPlaced(items: items)
+                cartStore.clear()
+            }
+            checkoutTask = nil
+        }
+    }
+
+    private func trackDemoOrderPlaced(items: [CartItem]) {
+        let aiStylistItems = items.filter { $0.source == AnalyticsSurface.aiStylist.rawValue }
+        analytics.track(.demoOrderPlaced(
+            orderNumber: viewModel.orderNumber,
+            itemCount: items.count,
+            subtotal: items.reduce(0) { $0 + $1.product.price },
+            aiStylistItemCount: aiStylistItems.count,
+            aiStylistSubtotal: aiStylistItems.reduce(0) { $0 + $1.product.price },
+            usedSavedPayment: viewModel.usesSavedPayment
+        ))
     }
 
     private var successState: some View {

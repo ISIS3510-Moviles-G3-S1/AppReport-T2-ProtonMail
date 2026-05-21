@@ -19,6 +19,19 @@ enum CartAddResult: Equatable {
             return "This item is no longer available."
         }
     }
+
+    var analyticsReason: String {
+        switch self {
+        case .added:
+            return "added"
+        case .alreadyInCart:
+            return "already_in_cart"
+        case .ownListing:
+            return "own_listing"
+        case .unavailable:
+            return "unavailable"
+        }
+    }
 }
 
 @MainActor
@@ -26,11 +39,13 @@ final class CartStore: ObservableObject {
     @Published private(set) var items: [CartItem] = []
 
     private let defaults: UserDefaults
+    private let memoryCache: CartContentsCache
     private let storageKeyPrefix = "unimarket.cart.items"
     private var activeUserID: String?
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
+        self.memoryCache = CartContentsCache.shared
         load(for: nil)
     }
 
@@ -51,7 +66,11 @@ final class CartStore: ObservableObject {
         loadFromStorage()
     }
 
-    func add(_ product: Product, currentUserID: String?) -> CartAddResult {
+    func add(
+        _ product: Product,
+        currentUserID: String?,
+        source: String = AnalyticsSurface.unknown.rawValue
+    ) -> CartAddResult {
         if let currentUserID = normalizedUserID(currentUserID), product.sellerId == currentUserID {
             return .ownListing
         }
@@ -64,7 +83,7 @@ final class CartStore: ObservableObject {
             return .alreadyInCart
         }
 
-        items.insert(CartItem(product: product), at: 0)
+        items.insert(CartItem(product: product, source: source), at: 0)
         saveToStorage()
         return .added
     }
@@ -106,7 +125,7 @@ final class CartStore: ObservableObject {
             }
 
             didChange = true
-            return CartItem(product: latestProduct, addedAt: item.addedAt)
+            return CartItem(product: latestProduct, addedAt: item.addedAt, source: item.source)
         }
 
         guard didChange else { return }
@@ -123,17 +142,25 @@ final class CartStore: ObservableObject {
     }
 
     private func loadFromStorage() {
+        if let cachedItems = memoryCache.items(for: storageKey) {
+            items = cachedItems
+            return
+        }
+
         guard let data = defaults.data(forKey: storageKey),
               let decodedItems = try? JSONDecoder().decode([CartItem].self, from: data)
         else {
             items = []
+            memoryCache.store([], for: storageKey)
             return
         }
 
         items = decodedItems
+        memoryCache.store(decodedItems, for: storageKey)
     }
 
     private func saveToStorage() {
+        memoryCache.store(items, for: storageKey)
         guard let data = try? JSONEncoder().encode(items) else { return }
         defaults.set(data, forKey: storageKey)
     }

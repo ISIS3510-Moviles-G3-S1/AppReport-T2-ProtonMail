@@ -4,6 +4,8 @@ enum AnalyticsSurface: String {
     case browseSearch = "browse_search"
     case searchRecommendations = "search_recommendations"
     case productDetail = "product_detail"
+    case aiStylist = "ai_stylist"
+    case cart = "cart"
     case unknown = "unknown"
 }
 
@@ -57,6 +59,8 @@ extension AnalyticsEvent {
             return "browse_search"
         case AnalyticsSurface.searchRecommendations.rawValue:
             return "search_recommendations"
+        case AnalyticsSurface.aiStylist.rawValue:
+            return "ai_stylist"
         default:
             return nil
         }
@@ -190,6 +194,145 @@ extension AnalyticsEvent {
             parameters: [
                 "product_id": .string(productID),
                 "source": .string(source)
+            ]
+        )
+    }
+
+    static func aiStylistChatViewed(conversationID: String?, existingConversation: Bool) -> AnalyticsEvent {
+        var parameters: [String: AnalyticsValue] = [
+            "existing_conversation": .bool(existingConversation)
+        ]
+        if let conversationID {
+            parameters["conversation_id"] = .string(conversationID)
+        }
+
+        return AnalyticsEvent(name: "ai_stylist_chat_viewed", parameters: parameters)
+    }
+
+    static func aiStylistPromptSent(
+        conversationID: String?,
+        promptLength: Int,
+        hasReferenceImage: Bool,
+        catalogCount: Int,
+        mode: String
+    ) -> AnalyticsEvent {
+        var parameters: [String: AnalyticsValue] = [
+            "prompt_length": .int(promptLength),
+            "has_reference_image": .bool(hasReferenceImage),
+            "catalog_count": .int(catalogCount),
+            "mode": .string(mode)
+        ]
+        if let conversationID {
+            parameters["conversation_id"] = .string(conversationID)
+        }
+
+        return AnalyticsEvent(name: "ai_stylist_prompt_sent", parameters: parameters)
+    }
+
+    static func aiStylistResponseReceived(
+        conversationID: String?,
+        responseSource: String,
+        suggestedProductCount: Int,
+        durationMs: Int
+    ) -> AnalyticsEvent {
+        var parameters: [String: AnalyticsValue] = [
+            "response_source": .string(responseSource),
+            "suggested_product_count": .int(suggestedProductCount),
+            "duration_ms": .int(durationMs)
+        ]
+        if let conversationID {
+            parameters["conversation_id"] = .string(conversationID)
+        }
+
+        return AnalyticsEvent(name: "ai_stylist_response_received", parameters: parameters)
+    }
+
+    static func aiStylistSuggestionSelected(
+        conversationID: String?,
+        messageID: String,
+        productID: String,
+        rank: Int,
+        price: Int
+    ) -> AnalyticsEvent {
+        var parameters: [String: AnalyticsValue] = [
+            "message_id": .string(messageID),
+            "product_id": .string(productID),
+            "rank": .int(rank),
+            "price_bucket": .string(priceBucket(for: price))
+        ]
+        if let conversationID {
+            parameters["conversation_id"] = .string(conversationID)
+        }
+
+        return AnalyticsEvent(name: "ai_stylist_suggestion_selected", parameters: parameters)
+    }
+
+    static func cartItemAdded(
+        productID: String,
+        price: Int,
+        source: String,
+        cartSize: Int,
+        containsAIStylistItem: Bool
+    ) -> AnalyticsEvent {
+        AnalyticsEvent(
+            name: "cart_item_added",
+            parameters: [
+                "product_id": .string(productID),
+                "price_bucket": .string(priceBucket(for: price)),
+                "source": .string(source),
+                "cart_size": .int(cartSize),
+                "contains_ai_stylist_item": .bool(containsAIStylistItem)
+            ]
+        )
+    }
+
+    static func cartItemAddRejected(productID: String, source: String, reason: String) -> AnalyticsEvent {
+        AnalyticsEvent(
+            name: "cart_item_add_rejected",
+            parameters: [
+                "product_id": .string(productID),
+                "source": .string(source),
+                "reason": .string(reason)
+            ]
+        )
+    }
+
+    static func checkoutStarted(
+        itemCount: Int,
+        subtotal: Int,
+        aiStylistItemCount: Int,
+        aiStylistSubtotal: Int
+    ) -> AnalyticsEvent {
+        AnalyticsEvent(
+            name: "checkout_started",
+            parameters: [
+                "item_count": .int(itemCount),
+                "subtotal": .int(subtotal),
+                "ai_stylist_item_count": .int(aiStylistItemCount),
+                "ai_stylist_subtotal": .int(aiStylistSubtotal),
+                "contains_ai_stylist_item": .bool(aiStylistItemCount > 0)
+            ]
+        )
+    }
+
+    static func demoOrderPlaced(
+        orderNumber: String,
+        itemCount: Int,
+        subtotal: Int,
+        aiStylistItemCount: Int,
+        aiStylistSubtotal: Int,
+        usedSavedPayment: Bool
+    ) -> AnalyticsEvent {
+        AnalyticsEvent(
+            name: "demo_order_placed",
+            parameters: [
+                "order_number": .string(orderNumber),
+                "item_count": .int(itemCount),
+                "subtotal": .int(subtotal),
+                "ai_stylist_item_count": .int(aiStylistItemCount),
+                "ai_stylist_subtotal": .int(aiStylistSubtotal),
+                "contains_ai_stylist_item": .bool(aiStylistItemCount > 0),
+                "used_saved_payment": .bool(usedSavedPayment)
             ]
         )
     }

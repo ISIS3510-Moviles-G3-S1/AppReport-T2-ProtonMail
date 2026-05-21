@@ -163,7 +163,7 @@ struct ProductDetailView: View {
                 price: vm.price,
                 condition: vm.conditionText,
                 isOwnListing: vm.isOwnListing,
-                source: source.rawValue
+                source: analyticsSource
             )
             analytics.track(event)
 
@@ -326,7 +326,7 @@ struct ProductDetailView: View {
                     let event = AnalyticsEvent.favoriteToggled(
                         productID: vm.id,
                         isFavorite: nextFavoriteState,
-                        source: source == .unknown ? AnalyticsSurface.productDetail.rawValue : source.rawValue
+                        source: analyticsSource
                     )
                     analytics.track(event)
 
@@ -364,9 +364,7 @@ struct ProductDetailView: View {
                         productID: vm.id,
                         sellerID: vm.sellerId,
                         price: vm.price,
-                        source: source == .unknown
-                            ? AnalyticsSurface.productDetail.rawValue
-                            : source.rawValue
+                        source: analyticsSource
                     ))
                     Task {
                         do {
@@ -485,9 +483,32 @@ struct ProductDetailView: View {
         cartStore.contains(productID: vm.id)
     }
 
+    private var analyticsSource: String {
+        source == .unknown ? AnalyticsSurface.productDetail.rawValue : source.rawValue
+    }
+
+    private var cartContainsAIStylistItem: Bool {
+        cartStore.items.contains { $0.source == AnalyticsSurface.aiStylist.rawValue }
+    }
+
     private func addCurrentProductToCart() {
-        let result = cartStore.add(currentProductForCart, currentUserID: session.uid)
-        if result != .added {
+        let product = currentProductForCart
+        let result = cartStore.add(product, currentUserID: session.uid, source: analyticsSource)
+
+        if result == .added {
+            analytics.track(.cartItemAdded(
+                productID: product.id,
+                price: product.price,
+                source: analyticsSource,
+                cartSize: cartStore.itemCount,
+                containsAIStylistItem: cartContainsAIStylistItem
+            ))
+        } else {
+            analytics.track(.cartItemAddRejected(
+                productID: product.id,
+                source: analyticsSource,
+                reason: result.analyticsReason
+            ))
             cartMessage = result.message
         }
     }
