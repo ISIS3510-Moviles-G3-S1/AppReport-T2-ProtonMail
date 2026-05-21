@@ -43,6 +43,7 @@ struct UniMarket_SwiftApp: App {
     @StateObject private var session = SessionManager.shared
     @StateObject private var chatStore = ChatStore()
     @StateObject private var productStore = ProductStore()
+    @StateObject private var cartStore = CartStore()
 
     var body: some Scene {
         WindowGroup {
@@ -50,6 +51,7 @@ struct UniMarket_SwiftApp: App {
                 .environmentObject(session)
                 .environmentObject(chatStore)
                 .environmentObject(productStore)
+                .environmentObject(cartStore)
                 .task {
                     productStore.prefetchImages(for: productStore.activeProducts)
                     // Bind syncers once; resumeIfNeeded drains anything

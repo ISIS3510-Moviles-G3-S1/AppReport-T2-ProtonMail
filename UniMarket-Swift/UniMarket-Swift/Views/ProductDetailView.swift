@@ -12,6 +12,7 @@ struct ProductDetailView: View {
     @EnvironmentObject private var chatStore: ChatStore
     @EnvironmentObject private var productStore: ProductStore
     @EnvironmentObject private var session: SessionManager
+    @EnvironmentObject private var cartStore: CartStore
 
     @StateObject private var vm: ProductDetailViewModel
     @StateObject private var networkMonitor = NetworkMonitor()
@@ -20,6 +21,7 @@ struct ProductDetailView: View {
     @State private var isStartingChat = false
     @State private var isUpdatingSaleState = false
     @State private var saleStateErrorMessage: String?
+    @State private var cartMessage: String?
     @State private var showGenerateQR = false
     @State private var showScanQR = false
 
@@ -150,6 +152,11 @@ struct ProductDetailView: View {
         }
         .navigationTitle("Product Details")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                CartToolbarButton()
+            }
+        }
         .onAppear {
             let event = AnalyticsEvent.productDetailViewed(
                 productID: vm.id,
@@ -212,6 +219,13 @@ struct ProductDetailView: View {
             }
         } message: {
             Text(saleStateErrorMessage ?? "Unknown error")
+        }
+        .alert("Cart", isPresented: cartMessageBinding) {
+            Button("OK", role: .cancel) {
+                cartMessage = nil
+            }
+        } message: {
+            Text(cartMessage ?? "")
         }
     }
 
@@ -282,6 +296,24 @@ struct ProductDetailView: View {
             }
         } else {
             VStack(spacing: 10) {
+                Button {
+                    addCurrentProductToCart()
+                } label: {
+                    HStack(spacing: 8) {
+                        Image(systemName: isCurrentProductInCart ? "cart.fill" : "cart.badge.plus")
+                        Text(isCurrentProductInCart ? "In Cart" : "Add to Cart")
+                    }
+                    .font(.poppinsSemiBold(16))
+                    .foregroundStyle(AppTheme.primaryText)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 14)
+                    .background(isCurrentProductInCart ? AppTheme.accentAlt : AppTheme.accent)
+                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                }
+                .buttonStyle(.plain)
+                .disabled(vm.status != .active || isCurrentProductInCart)
+                .opacity(vm.status == .active ? 1 : 0.55)
+
                 HStack(spacing: 12) {
                 // MARK: Favorite button
                 Button {
@@ -443,6 +475,32 @@ struct ProductDetailView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Color.gray.opacity(0.7))
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+    }
+
+    private var currentProductForCart: Product {
+        productStore.products.first(where: { $0.id == vm.id }) ?? product
+    }
+
+    private var isCurrentProductInCart: Bool {
+        cartStore.contains(productID: vm.id)
+    }
+
+    private func addCurrentProductToCart() {
+        let result = cartStore.add(currentProductForCart, currentUserID: session.uid)
+        if result != .added {
+            cartMessage = result.message
+        }
+    }
+
+    private var cartMessageBinding: Binding<Bool> {
+        Binding(
+            get: { cartMessage != nil },
+            set: { isPresented in
+                if !isPresented {
+                    cartMessage = nil
+                }
+            }
+        )
     }
 
     // MARK: - Chat sheet routing

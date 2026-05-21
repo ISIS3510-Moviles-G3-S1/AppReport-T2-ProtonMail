@@ -53,7 +53,9 @@ struct HomeView: View {
             recentlyViewed = RecentlyViewedCache.shared.products(for: session.uid)
         }
         .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
+            ToolbarItemGroup(placement: .topBarTrailing) {
+                CartToolbarButton()
+
                 NavigationLink {
                     ChatInboxView()
                 } label: {
