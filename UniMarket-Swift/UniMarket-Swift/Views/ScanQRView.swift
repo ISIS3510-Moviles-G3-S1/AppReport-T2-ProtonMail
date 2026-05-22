@@ -27,8 +27,8 @@ struct ScanQRView: View {
                 switch vm.scanState {
                 case .scanning:
                     scanningView
-                case .confirming(let transactionId):
-                    confirmingView(transactionId: transactionId)
+                case .confirming(let payload):
+                    confirmingView(payload: payload)
                 case .loading:
                     loadingView
                 case .confirmed:
@@ -97,7 +97,7 @@ struct ScanQRView: View {
         .padding(24)
     }
 
-    private func confirmingView(transactionId: String) -> some View {
+    private func confirmingView(payload: ScanQRViewModel.MeetupQRPayload) -> some View {
         VStack(spacing: 20) {
             Image(systemName: "qrcode.viewfinder")
                 .font(.system(size: 60))
@@ -115,7 +115,7 @@ struct ScanQRView: View {
                 Text("Transaction ID")
                     .font(.poppinsRegular(11))
                     .foregroundStyle(AppTheme.secondaryText)
-                Text(transactionId)
+                Text(payload.transactionId)
                     .font(.poppinsSemiBold(12))
                     .foregroundStyle(AppTheme.primaryText)
                     .lineLimit(1)
@@ -132,7 +132,7 @@ struct ScanQRView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
 
                 Button("Confirm") {
-                    Task { await vm.confirmPickup(transactionId: transactionId) }
+                    Task { await vm.confirmPickup(payload: payload) }
                 }
                 .font(.poppinsSemiBold(16))
                 .foregroundStyle(.white)

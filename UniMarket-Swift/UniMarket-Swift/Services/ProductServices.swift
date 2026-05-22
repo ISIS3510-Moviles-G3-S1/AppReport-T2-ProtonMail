@@ -102,7 +102,7 @@ final class ProductService {
             "soldAt": NSNull(),
             "imagePath": imageURLs.first ?? NSNull(),
             "imageURLs": imageURLs,
-            "status": ProductStatus.active.rawValue
+            "status": ProductStatus.active.firestoreValue
         ]
 
         try await document.setData(data)
@@ -126,6 +126,19 @@ final class ProductService {
     }
 
     func updateProduct(_ product: Product) async throws {
+        let docRef = db.collection(collectionName).document(product.id)
+
+        // Detect a fresh active -> sold transition *before* overwriting the doc, so
+        // `listing_marked_sold` fires exactly once per sale. The incoming product
+        // always carries a non-nil `soldAt` (Product.updatingSaleState sets it),
+        // so the transition can only be inferred from the doc's previous status.
+        var isNewSale = false
+        if product.status == .sold {
+            let existing = try? await docRef.getDocument()
+            let previousStatus = existing?.data()?["status"] as? String
+            isNewSale = ProductStatus(firestoreValue: previousStatus) != .sold
+        }
+
         let soldAtValue: Any
         if product.status == .sold {
             soldAtValue = product.soldAt.map { Timestamp(date: $0) } ?? (FieldValue.serverTimestamp() as Any)
@@ -133,14 +146,14 @@ final class ProductService {
             soldAtValue = NSNull()
         }
 
-        try await db.collection(collectionName).document(product.id).updateData([
+        try await docRef.updateData([
             "title": product.title,
             "price": product.price,
-            "status": product.status.rawValue,
+            "status": product.status.firestoreValue,
             "soldAt": soldAtValue
         ])
 
-        if product.status == .sold, product.soldAt == nil {
+        if isNewSale {
             analytics.track(.listingMarkedSold(
                 productID: product.id,
                 sellerID: product.sellerId,
@@ -256,7 +269,6 @@ final class ProductService {
         let createdAtTimestamp = data["createdAt"] as? Timestamp
         let soldAtTimestamp = data["soldAt"] as? Timestamp
         let imageURLs = data["imageURLs"] as? [String] ?? []
-        let statusRawValue = data["status"] as? String ?? ProductStatus.active.rawValue
 
         return Product(
             id: document.documentID,
@@ -273,7 +285,7 @@ final class ProductService {
             soldAt: soldAtTimestamp?.dateValue(),
             imagePath: data["imagePath"] as? String,
             imageURLs: imageURLs,
-            status: ProductStatus(rawValue: statusRawValue) ?? .active
+            status: ProductStatus(firestoreValue: data["status"] as? String)
         )
     }
 }

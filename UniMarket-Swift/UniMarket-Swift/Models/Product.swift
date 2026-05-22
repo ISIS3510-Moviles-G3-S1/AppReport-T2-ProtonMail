@@ -71,6 +71,23 @@ enum ProductStatus: String, CaseIterable, Identifiable, Codable {
     var id: String { rawValue }
 }
 
+extension ProductStatus {
+    /// Canonical Firestore representation — lowercase, shared with the Flutter
+    /// app (UniMarket-Dart `ListingStatus`). The capitalized `rawValue` is kept
+    /// for on-screen display only.
+    var firestoreValue: String { rawValue.lowercased() }
+
+    /// Case-insensitive decoder. Listing docs may carry the Swift app's
+    /// capitalized values or the Flutter app's lowercase ones — accept both.
+    init(firestoreValue raw: String?) {
+        switch raw?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() {
+        case "sold": self = .sold
+        case "paused": self = .paused
+        default: self = .active
+        }
+    }
+}
+
 extension Product {
     var isSold: Bool {
         status == .sold
