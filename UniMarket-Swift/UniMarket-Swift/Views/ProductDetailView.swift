@@ -105,6 +105,22 @@ struct ProductDetailView: View {
                                     .foregroundStyle(AppTheme.secondaryText)
                             }
                         }
+
+                        // Reviews link — minimal injection; no structural changes.
+                        NavigationLink {
+                            SellerReviewsView(sellerID: vm.sellerId)
+                                .environmentObject(session)
+                        } label: {
+                            HStack(spacing: 4) {
+                                Image(systemName: "star.bubble")
+                                    .font(.caption)
+                                Text("Reviews")
+                                    .font(.poppinsSemiBold(13))
+                                Image(systemName: "chevron.right")
+                                    .font(.caption2)
+                            }
+                            .foregroundStyle(AppTheme.accent)
+                        }
                     }
 
                     VStack(alignment: .leading, spacing: 8) {
