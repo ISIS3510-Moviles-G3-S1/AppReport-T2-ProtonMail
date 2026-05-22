@@ -145,6 +145,8 @@ final class SessionManager: ObservableObject {
         UserProfileCache.shared.clear()
         ProfileInsightsLRU.shared.clear()
         RecentlyViewedCache.shared.clear(for: evictedUID)
+        NotificationsCache.shared.clear(userID: evictedUID)
+        WatchlistPriceCache.shared.clear()
         analytics.track(.signOut())
         analytics.reset()
     }
