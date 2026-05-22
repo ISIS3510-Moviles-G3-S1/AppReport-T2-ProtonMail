@@ -28,17 +28,18 @@ struct ProductGridCard: View {
         self.onTapAddToCart = onTapAddToCart
     }
 
-    private var carouselImageURLs: [String] {
-        let urls = product.imageURLs
-            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
-            .filter { !$0.isEmpty }
-        if !urls.isEmpty { return urls }
-
-        if let fallback = product.imagePath?.trimmingCharacters(in: .whitespacesAndNewlines), !fallback.isEmpty {
-            return [fallback]
+    private var primaryImageURL: String? {
+        if let url = product.imageURLs
+            .map({ $0.trimmingCharacters(in: .whitespacesAndNewlines) })
+            .first(where: { !$0.isEmpty }) {
+            return url
         }
 
-        return []
+        if let fallback = product.imagePath?.trimmingCharacters(in: .whitespacesAndNewlines), !fallback.isEmpty {
+            return fallback
+        }
+
+        return nil
     }
 
     var body: some View {
@@ -127,7 +128,13 @@ struct ProductGridCard: View {
 
     @ViewBuilder
     private var productImage: some View {
-        if carouselImageURLs.isEmpty {
+        if let primaryImageURL {
+            CachedRemoteImageView(urlString: primaryImageURL, cacheKey: primaryImageURL)
+                .frame(height: 180)
+                .frame(maxWidth: .infinity)
+                .clipped()
+                .clipShape(RoundedRectangle(cornerRadius: 18))
+        } else {
             ZStack {
                 RoundedRectangle(cornerRadius: 18)
                     .fill(AppTheme.background)
@@ -137,18 +144,6 @@ struct ProductGridCard: View {
             }
             .frame(height: 180)
             .frame(maxWidth: .infinity)
-            .clipShape(RoundedRectangle(cornerRadius: 18))
-        } else {
-            TabView {
-                ForEach(carouselImageURLs, id: \.self) { imageURL in
-                    CachedRemoteImageView(urlString: imageURL, cacheKey: imageURL)
-                        .frame(height: 180)
-                        .frame(maxWidth: .infinity)
-                        .clipped()
-                }
-            }
-            .frame(height: 180)
-            .tabViewStyle(.page(indexDisplayMode: .automatic))
             .clipShape(RoundedRectangle(cornerRadius: 18))
         }
     }
