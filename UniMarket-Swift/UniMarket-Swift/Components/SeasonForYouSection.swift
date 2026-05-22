@@ -56,7 +56,7 @@ struct SeasonForYouSection: View {
                 .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
             } else {
                 ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 14) {
+                    LazyHStack(spacing: 14) {
                         ForEach(products) { product in
                             NavigationLink {
                                 ProductDetailView(product: product)
