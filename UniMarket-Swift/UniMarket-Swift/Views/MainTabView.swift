@@ -20,6 +20,10 @@ struct MainTabView: View {
     @State private var showUpload = false
     @State private var tabBarHidden = false
     @StateObject private var profileViewModel = ProfileViewModel()
+    /// Owned here so the watchlist survives tab switches and is available to
+    /// both ActivityView (WatchlistView) and ProductDetailView (WatchlistAddButton)
+    /// through the environment regardless of which NavigationStack is active.
+    @StateObject private var watchlistVM = WatchlistViewModel()
     @ObservedObject private var pendingListings = PendingListingsSyncer.shared
     @ObservedObject private var pendingMessages = PendingChatMessagesSyncer.shared
     @ObservedObject private var pendingFavorites = PendingFavoritesSyncer.shared
@@ -33,6 +37,7 @@ struct MainTabView: View {
         GeometryReader { proxy in
             ZStack {
                 tabContent
+                    .environmentObject(watchlistVM)
                     .frame(width: proxy.size.width, height: proxy.size.height)
 
                 if totalPendingCount > 0 {

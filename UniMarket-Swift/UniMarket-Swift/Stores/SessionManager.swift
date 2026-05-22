@@ -145,6 +145,9 @@ final class SessionManager: ObservableObject {
         UserProfileCache.shared.clear()
         ProfileInsightsLRU.shared.clear()
         RecentlyViewedCache.shared.clear(for: evictedUID)
+        // Flush any user-keyed caches that observe this notification
+        // (e.g. WatchlistPriceCache clears via NotificationCenter observer)
+        NotificationCenter.default.post(name: .userDidSignOut, object: nil)
         analytics.track(.signOut())
         analytics.reset()
     }
