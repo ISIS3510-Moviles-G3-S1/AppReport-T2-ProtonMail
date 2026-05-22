@@ -14,9 +14,40 @@ final class ScanQRViewModel: ObservableObject {
     private let productID: String?
     private let source: AnalyticsSurface
 
+    /// Decoded meetup QR payload. Schema shared with the Flutter app
+    /// (UniMarket-Dart `MeetupQrPayload`): a JSON object, not a raw id.
+    struct MeetupQRPayload {
+        let transactionId: String
+        let listingId: String
+        let sellerEmail: String
+        let buyerEmail: String
+
+        init?(rawValue: String) {
+            guard
+                let data = rawValue.data(using: .utf8),
+                let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                let transactionId = (json["transactionId"] as? String)?
+                    .trimmingCharacters(in: .whitespacesAndNewlines),
+                let listingId = (json["listingId"] as? String)?
+                    .trimmingCharacters(in: .whitespacesAndNewlines),
+                let sellerEmail = (json["sellerEmail"] as? String)?
+                    .trimmingCharacters(in: .whitespacesAndNewlines),
+                let buyerEmail = (json["buyerEmail"] as? String)?
+                    .trimmingCharacters(in: .whitespacesAndNewlines),
+                !transactionId.isEmpty, !listingId.isEmpty,
+                !sellerEmail.isEmpty, !buyerEmail.isEmpty
+            else { return nil }
+
+            self.transactionId = transactionId
+            self.listingId = listingId
+            self.sellerEmail = sellerEmail.lowercased()
+            self.buyerEmail = buyerEmail.lowercased()
+        }
+    }
+
     enum ScanState {
         case scanning
-        case confirming(transactionId: String)
+        case confirming(payload: MeetupQRPayload)
         case loading
         case confirmed
         case error(String)
@@ -32,12 +63,12 @@ final class ScanQRViewModel: ObservableObject {
     // MARK: - Scanner logic
 
     func handleScannedCode(_ code: String) {
-        let transactionId = code.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !transactionId.isEmpty else {
-            scanState = .error("Invalid QR code. Please scan a valid UniMarket QR.")
+        let trimmed = code.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let payload = MeetupQRPayload(rawValue: trimmed) else {
+            scanState = .error("Invalid QR code. Please scan a valid UniMarket meetup QR.")
             return
         }
-        scanState = .confirming(transactionId: transactionId)
+        scanState = .confirming(payload: payload)
     }
 
     func resetScanning() {
@@ -46,9 +77,16 @@ final class ScanQRViewModel: ObservableObject {
 
     // MARK: - Firestore confirmation
 
-    func confirmPickup(transactionId: String) async {
-        guard let currentUID = Auth.auth().currentUser?.uid else {
+    func confirmPickup(payload: MeetupQRPayload) async {
+        guard let currentUser = Auth.auth().currentUser else {
             scanState = .error("You must be logged in to confirm a pickup.")
+            return
+        }
+        let currentEmail = (currentUser.email ?? "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .lowercased()
+        guard currentEmail == payload.buyerEmail else {
+            scanState = .error("This QR can only be confirmed by the assigned buyer.")
             return
         }
 
@@ -56,15 +94,11 @@ final class ScanQRViewModel: ObservableObject {
 
         do {
             let db = Firestore.firestore()
-            let ref = db.collection("meetup_transactions").document(transactionId)
+            let ref = db.collection("meetup_transactions").document(payload.transactionId)
             let doc = try await ref.getDocument()
 
             guard doc.exists, let data = doc.data() else {
                 scanState = .error("Transaction not found. Please scan a valid QR.")
-                return
-            }
-            guard let buyerId = data["buyerId"] as? String, buyerId == currentUID else {
-                scanState = .error("This QR was not generated for your account.")
                 return
             }
             guard let status = data["status"] as? String, status == "pending" else {
@@ -72,15 +106,16 @@ final class ScanQRViewModel: ObservableObject {
                 return
             }
 
+            // Only status/confirmedAt change — the firestore.rules update guard
+            // requires every other field to stay identical.
             try await ref.updateData([
                 "status": "confirmed",
                 "confirmedAt": FieldValue.serverTimestamp()
             ])
 
-            let resolvedProductID = (data["listingId"] as? String) ?? productID ?? "unknown"
             analytics.track(.purchaseConfirmed(
-                productID: resolvedProductID,
-                transactionID: transactionId,
+                productID: payload.listingId,
+                transactionID: payload.transactionId,
                 source: source.rawValue
             ))
             scanState = .confirmed

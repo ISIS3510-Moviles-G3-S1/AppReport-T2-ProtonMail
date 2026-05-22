@@ -120,7 +120,7 @@ final class PendingListingMutationsSyncer: ObservableObject {
                 description: "",
                 soldAt: record.snapshot.soldAt,
                 imageURLs: record.snapshot.imageURLs,
-                status: ProductStatus(rawValue: record.snapshot.statusRaw) ?? .active
+                status: ProductStatus(firestoreValue: record.snapshot.statusRaw)
             )
             try await ProductService.shared.updateProduct(product)
         case .delete:
@@ -130,7 +130,7 @@ final class PendingListingMutationsSyncer: ObservableObject {
                 title: record.snapshot.title,
                 price: record.snapshot.price,
                 imageURLs: record.snapshot.imageURLs,
-                status: ProductStatus(rawValue: record.snapshot.statusRaw) ?? .active
+                status: ProductStatus(firestoreValue: record.snapshot.statusRaw)
             )
             try await ProductService.shared.deleteProduct(product)
         }

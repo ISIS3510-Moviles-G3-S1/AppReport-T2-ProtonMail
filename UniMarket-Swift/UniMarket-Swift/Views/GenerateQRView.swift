@@ -28,8 +28,8 @@ struct GenerateQRView: View {
                 inputView
             case .loading:
                 loadingView
-            case .generated(let transactionId):
-                generatedView(transactionId: transactionId)
+            case .generated(let transactionId, let qrPayload):
+                generatedView(transactionId: transactionId, qrPayload: qrPayload)
             }
         }
         .navigationTitle("Generate Meetup QR")
@@ -81,11 +81,11 @@ struct GenerateQRView: View {
                     .foregroundStyle(AppTheme.secondaryText)
 
                 VStack(alignment: .leading, spacing: 6) {
-                    Text("Buyer User ID")
+                    Text("Buyer Email")
                         .font(.poppinsSemiBold(13))
                         .foregroundStyle(AppTheme.secondaryText)
 
-                    TextField("e.g. SzYQPjOGb5Vcz...", text: $vm.buyerUID)
+                    TextField("buyer@uniandes.edu.co", text: $vm.buyerEmail)
                         .font(.poppinsRegular(14))
                         .foregroundStyle(AppTheme.primaryText)
                         .padding(12)
@@ -98,10 +98,11 @@ struct GenerateQRView: View {
                             RoundedRectangle(cornerRadius: 12)
                                 .stroke(Color.white.opacity(0.18), lineWidth: 1)
                         )
+                        .keyboardType(.emailAddress)
                         .autocorrectionDisabled()
                         .textInputAutocapitalization(.never)
 
-                    Text("Use the buyer's Firebase UID so only that buyer can confirm.")
+                    Text("Use the buyer's account email so only that buyer can confirm.")
                         .font(.poppinsRegular(11))
                         .foregroundStyle(AppTheme.secondaryText)
                 }
@@ -152,7 +153,7 @@ struct GenerateQRView: View {
 
     // MARK: - Generated view
 
-    private func generatedView(transactionId: String) -> some View {
+    private func generatedView(transactionId: String, qrPayload: String) -> some View {
         ScrollView {
             VStack(spacing: 24) {
                 HStack(spacing: 8) {
@@ -163,7 +164,7 @@ struct GenerateQRView: View {
                         .foregroundStyle(AppTheme.primaryText)
                 }
 
-                qrImage(for: transactionId)
+                qrImage(for: qrPayload)
                     .interpolation(.none)
                     .resizable()
                     .scaledToFit()
@@ -209,10 +210,10 @@ struct GenerateQRView: View {
 
     // MARK: - QR image helper
 
-    private func qrImage(for transactionId: String) -> Image {
+    private func qrImage(for content: String) -> Image {
         let context = CIContext()
         let filter = CIFilter.qrCodeGenerator()
-        filter.message = Data(transactionId.utf8)
+        filter.message = Data(content.utf8)
         filter.correctionLevel = "M"
         guard
             let output = filter.outputImage,
