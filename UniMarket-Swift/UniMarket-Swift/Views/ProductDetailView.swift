@@ -14,6 +14,7 @@ struct ProductDetailView: View {
     @EnvironmentObject private var session: SessionManager
     @EnvironmentObject private var cartStore: CartStore
 
+    @EnvironmentObject private var watchlistVM: WatchlistViewModel
     @StateObject private var vm: ProductDetailViewModel
     @StateObject private var networkMonitor = NetworkMonitor()
     @State private var editingProduct: Product?
@@ -422,6 +423,9 @@ struct ProductDetailView: View {
             }
             .disabled(vm.status != .active)
             .opacity(vm.status == .active ? 1 : 0.55)
+
+            // MARK: Watch Price button
+            WatchlistAddButton(product: product)
             } // end VStack (buyer)
         }
     }

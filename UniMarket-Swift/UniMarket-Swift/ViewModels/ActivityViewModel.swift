@@ -16,6 +16,7 @@ final class ActivityViewModel: ObservableObject {
     enum Tab: String, CaseIterable {
         case likes = "Saved Items"
         case listings = "My Listings"
+        case watchlist = "Watchlist"
     }
 
     enum UserActivityState {
