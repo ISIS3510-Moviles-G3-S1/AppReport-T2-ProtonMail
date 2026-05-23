@@ -1,6 +1,14 @@
 import Foundation
 
-// Declared at file scope so their Codable synthesis is nonisolated.
+struct DonationListingSnapshot: Codable, Identifiable, Sendable {
+    let id: String
+    let title: String
+    let imageURL: String?
+    let categoryTag: String
+    let sellerName: String
+    let createdAt: Date
+}
+
 struct DonationSnapshot: Codable, Sendable {
     let listings: [DonationListingSnapshot]
     let fetchedAt: Date
@@ -17,73 +25,38 @@ struct DonationSnapshot: Codable, Sendable {
     }
 }
 
-struct DonationListingSnapshot: Codable, Identifiable, Sendable {
-    let id: String
-    let title: String
-    let imageURL: String?
-    let categoryTag: String
-    let sellerName: String
-    let createdAt: Date
-}
-
-final class DonationOfflineSnapshotStore {
-    static let shared = DonationOfflineSnapshotStore()
-
-    private let fileManager = FileManager.default
-    private let encoder = JSONEncoder()
-    private let decoder = JSONDecoder()
-    private let queue = DispatchQueue(label: "com.unimarket.donations.snapshot")
-
-    private var snapshotURL: URL {
-        let supportDir = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-        let donationsDir = supportDir.appendingPathComponent("Donations", isDirectory: true)
-        try? fileManager.createDirectory(at: donationsDir, withIntermediateDirectories: true)
-        return donationsDir.appendingPathComponent("donations_browse_snapshot.json")
+/// Tiny JSON snapshot of donation listings for offline browsing.
+/// I/O is synchronous — the payload is small and callers are already on the main actor.
+enum DonationOfflineSnapshotStore {
+    private static var snapshotURL: URL {
+        let support = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+        let dir = support.appendingPathComponent("Donations", isDirectory: true)
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        return dir.appendingPathComponent("donations_browse_snapshot.json")
     }
 
-    // Nested typealiases so callsites using the old nested path still work.
-    typealias DonationSnapshot = UniMarket_Swift.DonationSnapshot
-    typealias DonationListingSnapshot = UniMarket_Swift.DonationListingSnapshot
-
-    func persist(_ listings: [Product]) {
-        queue.async { [weak self] in
-            guard let self else { return }
-            let snapshots = listings.map { product -> DonationListingSnapshot in
-                DonationListingSnapshot(
-                    id: product.id,
-                    title: product.title,
-                    imageURL: product.primaryImageURL,
-                    categoryTag: product.tags.first ?? "uncategorized",
-                    sellerName: product.sellerName,
-                    createdAt: product.createdAt
-                )
-            }
-            let snapshot = DonationSnapshot(listings: snapshots, fetchedAt: .now)
-            do {
-                let data = try self.encoder.encode(snapshot)
-                try data.write(to: self.snapshotURL, options: .atomic)
-            } catch {
-                print("[DonationOfflineSnapshotStore] Failed to persist snapshot: \(error)")
-            }
+    static func persist(_ listings: [Product]) {
+        let snaps = listings.map {
+            DonationListingSnapshot(
+                id: $0.id,
+                title: $0.title,
+                imageURL: $0.primaryImageURL,
+                categoryTag: $0.tags.first ?? "uncategorized",
+                sellerName: $0.sellerName,
+                createdAt: $0.createdAt
+            )
         }
+        let snapshot = DonationSnapshot(listings: snaps, fetchedAt: .now)
+        guard let data = try? JSONEncoder().encode(snapshot) else { return }
+        try? data.write(to: snapshotURL, options: .atomic)
     }
 
-    func load() -> DonationSnapshot? {
-        var snapshot: DonationSnapshot?
-        queue.sync {
-            do {
-                let data = try Data(contentsOf: snapshotURL)
-                snapshot = try decoder.decode(DonationSnapshot.self, from: data)
-            } catch {
-                print("[DonationOfflineSnapshotStore] Failed to load snapshot: \(error)")
-            }
-        }
-        return snapshot
+    static func load() -> DonationSnapshot? {
+        guard let data = try? Data(contentsOf: snapshotURL) else { return nil }
+        return try? JSONDecoder().decode(DonationSnapshot.self, from: data)
     }
 
-    func clear() {
-        queue.async { [weak self] in
-            try? self?.fileManager.removeItem(at: self?.snapshotURL ?? URL(fileURLWithPath: ""))
-        }
+    static func clear() {
+        try? FileManager.default.removeItem(at: snapshotURL)
     }
 }

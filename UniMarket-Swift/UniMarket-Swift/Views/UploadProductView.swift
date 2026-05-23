@@ -29,6 +29,8 @@ struct UploadProductView: View {
     // Optional: Pre-fill data from AI analysis
     var aiAnalysisImage: UIImage?
     var aiListingDraft: AIListingDraft?
+    /// Pre-selects sale vs donation. The Home "Donate" button passes .donation.
+    var initialKind: ListingKind = .sale
 
     private let conditions = ["Good", "Like New"]
     private let columns = [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())]
@@ -50,8 +52,35 @@ struct UploadProductView: View {
 
                     labeledTextField(title: "Title", placeholder: "Ex: Vintage Jacket", text: $vm.title)
 
-                    labeledTextField(title: "Price", placeholder: "Ex: 18000", text: $vm.price)
-                        .keyboardType(.numberPad)
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Listing type")
+                            .font(.poppinsSemiBold(16))
+                            .foregroundStyle(AppTheme.primaryText)
+
+                        Picker("Kind", selection: $vm.kind) {
+                            Text("Sale").tag(ListingKind.sale)
+                            Text("Donation").tag(ListingKind.donation)
+                        }
+                        .pickerStyle(.segmented)
+                    }
+
+                    if vm.kind == .sale {
+                        labeledTextField(title: "Price", placeholder: "Ex: 18000", text: $vm.price)
+                            .keyboardType(.numberPad)
+                    } else {
+                        // Donation listings publish at price 0 — make the affordance explicit.
+                        HStack(spacing: 8) {
+                            Image(systemName: "gift")
+                                .foregroundStyle(AppTheme.accent)
+                            Text("Free — this item will be listed as a donation.")
+                                .font(.poppinsRegular(13))
+                                .foregroundStyle(AppTheme.secondaryText)
+                            Spacer()
+                        }
+                        .padding(12)
+                        .background(AppTheme.accent.opacity(0.08))
+                        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    }
 
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Condition")
@@ -134,6 +163,12 @@ struct UploadProductView: View {
         }
         .onAppear {
             analytics.track(.uploadScreenViewed())
+
+            // Apply caller-supplied initial kind exactly once (don't clobber a
+            // user mid-edit who flipped the segmented control themselves).
+            if vm.kind == .sale && initialKind != .sale {
+                vm.kind = initialKind
+            }
 
             guard !hasAppliedAIDraft, let aiListingDraft else { return }
             vm.applyAIDraft(aiListingDraft, image: aiAnalysisImage)

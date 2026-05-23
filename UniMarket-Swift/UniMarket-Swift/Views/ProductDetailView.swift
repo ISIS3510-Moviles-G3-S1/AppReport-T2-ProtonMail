@@ -25,6 +25,7 @@ struct ProductDetailView: View {
     @State private var cartMessage: String?
     @State private var showGenerateQR = false
     @State private var showScanQR = false
+    @State private var showDonationClaim = false
 
     private let product: Product
     private let onProductUpdated: ((Product) -> Void)?
@@ -230,6 +231,16 @@ struct ProductDetailView: View {
         .sheet(isPresented: $showScanQR) {
             ScanQRView(productID: vm.id, source: source)
         }
+        .sheet(isPresented: $showDonationClaim) {
+            DonationRequestSheet(
+                viewModel: DonationRequestViewModel(
+                    product: vm.product,
+                    requesterID: session.uid ?? "",
+                    container: UniMarket_SwiftApp.donationsContainer
+                )
+            )
+            .environmentObject(session)
+        }
         .alert("Couldn't Update Listing", isPresented: saleStateErrorBinding) {
             Button("OK", role: .cancel) {
                 saleStateErrorMessage = nil
@@ -330,6 +341,28 @@ struct ProductDetailView: View {
                 .buttonStyle(.plain)
                 .disabled(vm.status != .active || isCurrentProductInCart)
                 .opacity(vm.status == .active ? 1 : 0.55)
+
+                // Donation listings additionally surface a "Claim Donation" CTA
+                // alongside the existing Add-to-Cart button.
+                if vm.kind == .donation {
+                    Button {
+                        showDonationClaim = true
+                    } label: {
+                        HStack(spacing: 8) {
+                            Image(systemName: "gift.fill")
+                            Text("Claim Donation")
+                        }
+                        .font(.poppinsSemiBold(16))
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 14)
+                        .background(Color.green)
+                        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(vm.status != .active)
+                    .opacity(vm.status == .active ? 1 : 0.55)
+                }
 
                 HStack(spacing: 12) {
                 // MARK: Favorite button

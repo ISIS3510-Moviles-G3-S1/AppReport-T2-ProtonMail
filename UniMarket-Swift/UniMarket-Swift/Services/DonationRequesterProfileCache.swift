@@ -3,11 +3,13 @@ import Foundation
 final class CachedDonationRequester {
     let uid: String
     let displayName: String
+    let email: String?
     let profilePicURL: String?
 
-    init(uid: String, displayName: String, profilePicURL: String?) {
+    init(uid: String, displayName: String, email: String?, profilePicURL: String?) {
         self.uid = uid
         self.displayName = displayName
+        self.email = email
         self.profilePicURL = profilePicURL
     }
 }
@@ -53,7 +55,10 @@ final class DonationRequesterProfileCache {
     func set(_ requester: CachedDonationRequester, for uid: String) {
         lock.lock()
         defer { lock.unlock() }
-        let cost = requester.displayName.utf8.count + (requester.profilePicURL?.utf8.count ?? 0) + 32
+        let cost = requester.displayName.utf8.count
+            + (requester.email?.utf8.count ?? 0)
+            + (requester.profilePicURL?.utf8.count ?? 0)
+            + 32
         cache.setObject(requester, forKey: uid as NSString, cost: cost)
         expirationTimes[uid] = Date().addingTimeInterval(ttl)
     }

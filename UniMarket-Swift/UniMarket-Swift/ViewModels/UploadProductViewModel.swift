@@ -27,6 +27,9 @@ final class UploadProductViewModel: ObservableObject {
     @Published var selectedTags: [String] = []
     @Published var tagSearchText: String = ""
     @Published var customTagInput: String = ""
+    /// Sale by default. Donations skip the price field and write kind="donation"
+    /// to Firestore so the Donations tab/Flutter client can pick them up.
+    @Published var kind: ListingKind = .sale
 
     @Published var isPosting: Bool = false
     @Published var errorMessage: String? = nil
@@ -100,9 +103,10 @@ final class UploadProductViewModel: ObservableObject {
     }
 
     var canPost: Bool {
-        !imagesData.isEmpty &&
-        !title.trimmingCharacters(in: .whitespaces).isEmpty &&
-        Int(price) != nil
+        guard !imagesData.isEmpty,
+              !title.trimmingCharacters(in: .whitespaces).isEmpty else { return false }
+        // Donations don't require a price; sales do.
+        return kind == .donation || Int(price) != nil
     }
 
     var hasDraftContent: Bool {
@@ -116,7 +120,9 @@ final class UploadProductViewModel: ObservableObject {
     }
 
     func postProduct(using productStore: ProductStore) async -> PostOutcome {
-        guard canPost, let parsedPrice = Int(price) else { return .failed }
+        guard canPost else { return .failed }
+        // Donations force price=0 regardless of what the user typed.
+        let parsedPrice = kind == .donation ? 0 : (Int(price) ?? 0)
         analytics.track(.listingSubmitAttempt(
             photoCount: imagesData.count,
             hasDescription: !description.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
@@ -140,7 +146,8 @@ final class UploadProductViewModel: ObservableObject {
             conditionTag: condition,
             description: description.trimmingCharacters(in: .whitespacesAndNewlines),
             imagesData: imagesData,
-            tags: selectedTags
+            tags: selectedTags,
+            kind: kind
         )
 
         // Offline up front: skip the network attempt, enqueue to disk, surface
@@ -287,6 +294,7 @@ final class UploadProductViewModel: ObservableObject {
         selectedTags = []
         tagSearchText = ""
         customTagInput = ""
+        kind = .sale
         activeDraftID = nil
         errorMessage = nil
         // Note: we deliberately don't clear infoMessage here — the post-publish

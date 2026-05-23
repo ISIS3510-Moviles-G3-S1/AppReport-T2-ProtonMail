@@ -3,44 +3,64 @@ import Combine
 
 @MainActor
 final class DonationsBrowseViewModel: ObservableObject {
-    @Published var listings: [Product] = []
+    /// Filtered listings for display. The raw set is kept in `allListings` so
+    /// changing category doesn't require a network round-trip.
+    @Published private(set) var listings: [Product] = []
     @Published var isLoading = false
     @Published var errorMessage: String?
     @Published var lastRefreshTime: Date?
-    @Published var offlineSnapshot: DonationOfflineSnapshotStore.DonationSnapshot?
+    @Published var offlineSnapshot: DonationSnapshot?
+    /// Currently selected category chip — "all" by default. Filter is applied
+    /// client-side so chip taps are instant.
+    @Published private(set) var selectedCategory: String = "all"
 
+    private var allListings: [Product] = []
     private var refreshTask: Task<Void, Never>?
 
-    func refresh() {
+    /// Same category set the Flutter app exposes, in the same order.
+    static let categories: [(key: String, label: String)] = [
+        ("all", "All Items"),
+        ("clothing", "Clothing"),
+        ("shoes", "Shoes"),
+        ("accessories", "Accessories"),
+        ("eco", "Eco")
+    ]
+
+    func refresh(forceNetwork: Bool = false) {
         refreshTask?.cancel()
         refreshTask = Task {
             isLoading = true
             defer { isLoading = false }
 
-            do {
-                // Parallel pre-flight: fetch listings and category counts concurrently
-                async let listingsTask = DonationService.shared.fetchDonationListings()
-                async let countsTask = DonationService.shared.fetchRequestCountsPerListing([])
+            // Try the all-category LRU first unless force-refresh
+            if !forceNetwork, let cached = DonationListingsLRU.shared.get(for: "all") {
+                allListings = cached
+                applyFilter()
+                return
+            }
 
+            do {
+                // Parallel pre-flight: listings + (future) per-listing counts
+                async let listingsTask = DonationService.shared.fetchDonationListings()
+                async let countsTask  = DonationService.shared.fetchRequestCountsPerListing([])
                 let (donationListings, _) = try await (listingsTask, countsTask)
 
-                listings = donationListings
+                allListings = donationListings
                 lastRefreshTime = Date()
-
-                // Cache by category for faster future lookups
-                let grouped = Dictionary(grouping: donationListings) { $0.tags.first ?? "uncategorized" }
-                for (category, products) in grouped {
-                    DonationListingsLRU.shared.set(products, for: category)
-                }
-
-                // Persist snapshot for offline access
-                DonationOfflineSnapshotStore.shared.persist(donationListings)
-
-                // Track analytics
-                AnalyticsService.shared.track(.donationBrowsed(countShown: listings.count))
-
                 offlineSnapshot = nil
                 errorMessage = nil
+
+                // Refresh LRU keyed by "all" so the next visit hits cache.
+                DonationListingsLRU.shared.set(donationListings, for: "all")
+                // Per-tag warm cache too — useful when the user picks a chip first.
+                for (tag, products) in Dictionary(grouping: donationListings, by: { $0.tags.first ?? "uncategorized" }) {
+                    DonationListingsLRU.shared.set(products, for: tag)
+                }
+
+                DonationOfflineSnapshotStore.persist(donationListings)
+                AnalyticsService.shared.track(.donationBrowsed(countShown: donationListings.count))
+
+                applyFilter()
             } catch {
                 errorMessage = error.localizedDescription
                 loadOfflineSnapshot()
@@ -48,34 +68,20 @@ final class DonationsBrowseViewModel: ObservableObject {
         }
     }
 
-    func loadCategory(_ category: String) {
-        refreshTask?.cancel()
-        refreshTask = Task {
-            isLoading = true
-            defer { isLoading = false }
-
-            // Try LRU cache first (O(n) scan on capacity=16 — acceptable)
-            if let cached = DonationListingsLRU.shared.get(for: category) {
-                listings = cached
-                return
-            }
-
-            do {
-                let categoryListings = try await DonationService.shared.fetchDonationListingsByCategory(category)
-                listings = categoryListings
-                DonationListingsLRU.shared.set(categoryListings, for: category)
-                errorMessage = nil
-            } catch {
-                errorMessage = error.localizedDescription
-            }
-        }
+    func selectCategory(_ category: String) {
+        selectedCategory = category
+        applyFilter()
     }
 
     func loadOfflineSnapshot() {
-        guard let snapshot = DonationOfflineSnapshotStore.shared.load() else { return }
+        guard let snapshot = DonationOfflineSnapshotStore.load() else {
+            allListings = []
+            applyFilter()
+            return
+        }
         offlineSnapshot = snapshot
-        // Reconstruct minimal Product objects from the snapshot for rendering
-        listings = snapshot.listings.map { s in
+        // Reconstruct minimal Product objects from the snapshot for rendering.
+        allListings = snapshot.listings.map { s in
             Product(
                 id: s.id,
                 title: s.title,
@@ -86,6 +92,7 @@ final class DonationsBrowseViewModel: ObservableObject {
                 kind: .donation
             )
         }
+        applyFilter()
     }
 
     func cancel() {
@@ -94,5 +101,20 @@ final class DonationsBrowseViewModel: ObservableObject {
 
     deinit {
         refreshTask?.cancel()
+    }
+
+    // MARK: - Private
+
+    /// Match Flutter: "all" shows everything; otherwise match against tags OR conditionTag.
+    private func applyFilter() {
+        if selectedCategory == "all" {
+            listings = allListings
+            return
+        }
+        let key = selectedCategory.lowercased()
+        listings = allListings.filter { product in
+            product.tags.contains(where: { $0.lowercased() == key })
+                || product.conditionTag.lowercased() == key
+        }
     }
 }

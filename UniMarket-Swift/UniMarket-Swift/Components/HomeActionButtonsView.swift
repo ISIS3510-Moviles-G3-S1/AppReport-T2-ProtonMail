@@ -10,6 +10,8 @@ import SwiftUI
 struct HomeActionButtonsView: View {
     let onBrowseItems: () -> Void
     let onStartSelling: () -> Void
+    /// Opens the upload sheet with kind=donation pre-selected.
+    let onStartDonating: () -> Void
 
     var body: some View {
         VStack(spacing: 12) {
@@ -37,13 +39,9 @@ struct HomeActionButtonsView: View {
                     .stroke(AppTheme.accent, lineWidth: 1.2)
             )
 
-            HStack(spacing: 12) {
-                smallButton(title: "Donate", icon: "gift") {
-                }
-
-                smallButton(title: "Swap", icon: "arrow.left.arrow.right") {
-                }
-            }
+            // Single secondary CTA — Donate. Swap/barter is not implemented in
+            // the Swift app yet, so the previous "Swap" button was removed.
+            smallButton(title: "Donate", icon: "gift", action: onStartDonating)
         }
     }
 

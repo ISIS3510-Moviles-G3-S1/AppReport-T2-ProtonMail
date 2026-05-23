@@ -23,6 +23,27 @@ struct CreateProductInput {
     let description: String
     let imagesData: [Data]
     let tags: [String]
+    let kind: ListingKind
+
+    init(
+        title: String,
+        price: Int,
+        conditionTag: String,
+        description: String,
+        imagesData: [Data],
+        tags: [String],
+        kind: ListingKind = .sale
+    ) {
+        self.title = title
+        // Donations always have price 0 — enforce here so we can't accidentally
+        // post a paid donation listing from any call site.
+        self.price = kind == .donation ? 0 : price
+        self.conditionTag = conditionTag
+        self.description = description
+        self.imagesData = imagesData
+        self.tags = tags
+        self.kind = kind
+    }
 }
 
 final class ProductService {
@@ -108,7 +129,10 @@ final class ProductService {
             "soldAt": NSNull(),
             "imagePath": imageURLs.first ?? NSNull(),
             "imageURLs": imageURLs,
-            "status": ProductStatus.active.firestoreValue
+            "status": ProductStatus.active.firestoreValue,
+            // "kind" is read by both Swift and Flutter via the ListingKind enum.
+            // Legacy docs without the field decode as .sale.
+            "kind": input.kind.rawValue
         ]
 
         try await document.setData(data)

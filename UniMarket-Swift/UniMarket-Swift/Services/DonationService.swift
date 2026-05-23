@@ -2,6 +2,11 @@ import Foundation
 import FirebaseFirestore
 import FirebaseAuth
 
+/// All queries here intentionally avoid `.order(by:)` on a different field than
+/// the equality filters — combining the two requires a composite Firestore
+/// index, which adds friction for every new project clone. Lists are sorted
+/// client-side (datasets here are small: tens to low hundreds of items).
+/// This matches the Flutter app's pattern.
 final class DonationService {
     static let shared = DonationService()
 
@@ -31,31 +36,28 @@ final class DonationService {
     func fetchDonationRequests(for sellerID: String) async throws -> [DonationRequest] {
         let snapshot = try await db.collection("donationRequests")
             .whereField("sellerID", isEqualTo: sellerID)
-            .order(by: "createdAt", descending: true)
             .getDocuments()
-        return snapshot.documents.compactMap { doc in
-            decodeDonationRequest(doc.data(), id: doc.documentID)
-        }
+        return snapshot.documents
+            .compactMap { decodeDonationRequest($0.data(), id: $0.documentID) }
+            .sorted { $0.createdAt > $1.createdAt }
     }
 
     func fetchIncomingRequests(for sellerID: String) async throws -> [DonationRequest] {
         let snapshot = try await db.collection("donationRequests")
             .whereField("sellerID", isEqualTo: sellerID)
-            .order(by: "createdAt", descending: true)
             .getDocuments()
-        return snapshot.documents.compactMap { doc in
-            decodeDonationRequest(doc.data(), id: doc.documentID)
-        }
+        return snapshot.documents
+            .compactMap { decodeDonationRequest($0.data(), id: $0.documentID) }
+            .sorted { $0.createdAt > $1.createdAt }
     }
 
     func fetchRequestsForRequester(id: String) async throws -> [DonationRequest] {
         let snapshot = try await db.collection("donationRequests")
             .whereField("requesterID", isEqualTo: id)
-            .order(by: "createdAt", descending: true)
             .getDocuments()
-        return snapshot.documents.compactMap { doc in
-            decodeDonationRequest(doc.data(), id: doc.documentID)
-        }
+        return snapshot.documents
+            .compactMap { decodeDonationRequest($0.data(), id: $0.documentID) }
+            .sorted { $0.createdAt > $1.createdAt }
     }
 
     func updateDonationRequestStatus(_ requestID: String, status: DonationRequestStatus) async throws {
@@ -65,27 +67,40 @@ final class DonationService {
         ])
     }
 
+    // MARK: - Listings (live in the `listings` collection, shared with the marketplace)
+
     func fetchDonationListings() async throws -> [Product] {
-        let snapshot = try await db.collection("products")
+        let snapshot = try await db.collection("listings")
             .whereField("kind", isEqualTo: "donation")
             .whereField("status", isEqualTo: "active")
-            .order(by: "createdAt", descending: true)
             .getDocuments()
-        return snapshot.documents.compactMap { doc in
-            try? doc.data(as: Product.self)
-        }
+        return snapshot.documents
+            .compactMap { try? $0.data(as: Product.self) }
+            .sorted { $0.createdAt > $1.createdAt }
+    }
+
+    /// Donation listings owned by the current user — drives the "Given" tab in MyDonationsView.
+    func fetchMyDonationListings(sellerID: String) async throws -> [Product] {
+        let snapshot = try await db.collection("listings")
+            .whereField("kind", isEqualTo: "donation")
+            .whereField("sellerId", isEqualTo: sellerID)
+            .getDocuments()
+        return snapshot.documents
+            .compactMap { try? $0.data(as: Product.self) }
+            .sorted { $0.createdAt > $1.createdAt }
     }
 
     func fetchDonationListingsByCategory(_ category: String) async throws -> [Product] {
-        let snapshot = try await db.collection("products")
+        // `arrayContains` already adds a constraint; client-side sort keeps us
+        // off the composite-index requirement.
+        let snapshot = try await db.collection("listings")
             .whereField("kind", isEqualTo: "donation")
             .whereField("status", isEqualTo: "active")
             .whereField("tags", arrayContains: category)
-            .order(by: "createdAt", descending: true)
             .getDocuments()
-        return snapshot.documents.compactMap { doc in
-            try? doc.data(as: Product.self)
-        }
+        return snapshot.documents
+            .compactMap { try? $0.data(as: Product.self) }
+            .sorted { $0.createdAt > $1.createdAt }
     }
 
     func fetchRequestCountsPerListing(_ listingIDs: [String]) async throws -> [String: Int] {

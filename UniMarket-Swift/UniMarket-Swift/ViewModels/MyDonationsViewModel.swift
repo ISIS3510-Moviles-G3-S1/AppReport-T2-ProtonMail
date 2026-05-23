@@ -4,8 +4,13 @@ import SwiftData
 
 @MainActor
 final class MyDonationsViewModel: ObservableObject {
-    @Published var givenDonations: [DonationRequestRecord] = []
-    @Published var claimedDonations: [DonationRequestRecord] = []
+    /// Listings the user has POSTED as donations (Given tab) — sourced from
+    /// the `listings` collection where kind=donation AND sellerId=me.
+    @Published var givenListings: [Product] = []
+    /// Requests the user has SUBMITTED to claim others' donations (Claimed tab) —
+    /// sourced from the `donationRequests` SwiftData store, with online merge
+    /// from Firestore.
+    @Published var claimedRequests: [DonationRequestRecord] = []
     @Published var isLoading = false
     @Published var errorMessage: String?
     @Published var syncingCount = 0
@@ -25,29 +30,51 @@ final class MyDonationsViewModel: ObservableObject {
             isLoading = true
             defer { isLoading = false }
 
-            let ctx = ModelContext(container)
-            let uid = userID
+            // Fetch both halves in parallel — independent network calls.
+            async let givenTask = fetchGiven()
+            async let claimedTask = fetchClaimed()
+            let (given, claimed) = await (givenTask, claimedTask)
 
-            let givenDescriptor = FetchDescriptor<DonationRequestRecord>(
-                predicate: #Predicate { $0.sellerID == uid },
-                sortBy: [SortDescriptor(\DonationRequestRecord.createdAt, order: .reverse)]
-            )
-            let claimedDescriptor = FetchDescriptor<DonationRequestRecord>(
-                predicate: #Predicate { $0.requesterID == uid },
-                sortBy: [SortDescriptor(\DonationRequestRecord.createdAt, order: .reverse)]
-            )
-
-            givenDonations = (try? ctx.fetch(givenDescriptor)) ?? []
-            claimedDonations = (try? ctx.fetch(claimedDescriptor)) ?? []
-            updateSyncingCount()
+            givenListings = given
+            claimedRequests = claimed
+            syncingCount = claimed.filter { !$0.isSyncedClaim || !$0.isSyncedDecision }.count
             errorMessage = nil
         }
     }
 
-    private func updateSyncingCount() {
-        let unsynced = claimedDonations.filter { !$0.isSyncedClaim }.count +
-                       givenDonations.filter { !$0.isSyncedDecision }.count
-        syncingCount = unsynced
+    // MARK: - Private fetchers
+
+    private func fetchGiven() async -> [Product] {
+        guard NetworkMonitor.shared.isConnected else { return [] }
+        return (try? await DonationService.shared.fetchMyDonationListings(sellerID: userID)) ?? []
+    }
+
+    private func fetchClaimed() async -> [DonationRequestRecord] {
+        let ctx = ModelContext(container)
+        let uid = userID
+        let descriptor = FetchDescriptor<DonationRequestRecord>(
+            predicate: #Predicate { $0.requesterID == uid },
+            sortBy: [SortDescriptor(\DonationRequestRecord.createdAt, order: .reverse)]
+        )
+
+        // Merge in remote requests so a user can see claims they made on another device.
+        if NetworkMonitor.shared.isConnected,
+           let remote = try? await DonationService.shared.fetchRequestsForRequester(id: userID) {
+            let existing = (try? ctx.fetch(descriptor)) ?? []
+            for r in remote {
+                if let local = existing.first(where: { $0.id == r.id }) {
+                    if local.isSyncedDecision {
+                        local.status = r.status
+                        local.resolvedAt = r.resolvedAt
+                    }
+                } else {
+                    ctx.insert(DonationRequestRecord.from(r, isSyncedClaim: true, isSyncedDecision: true))
+                }
+            }
+            try? ctx.save()
+        }
+
+        return (try? ctx.fetch(descriptor)) ?? []
     }
 
     func cancel() {

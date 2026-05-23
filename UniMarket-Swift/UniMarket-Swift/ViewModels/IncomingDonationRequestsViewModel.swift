@@ -8,8 +8,9 @@ final class IncomingDonationRequestsViewModel: ObservableObject {
     @Published var requests: [DonationRequestRecord] = []
     @Published var isLoading = false
     @Published var errorMessage: String?
-    /// displayName keyed by requester UID, hydrated from cache + Firestore
-    @Published var requesterNames: [String: String] = [:]
+    /// Full profile (displayName + email) keyed by requester UID — surfaced by
+    /// the incoming requests row so the seller can identify who's claiming.
+    @Published var requesterProfiles: [String: CachedDonationRequester] = [:]
 
     private let sellerID: String
     private let container: ModelContainer
@@ -21,51 +22,79 @@ final class IncomingDonationRequestsViewModel: ObservableObject {
         self.container = container
     }
 
+    /// Convenience read used by the grouped-by-listing UI.
+    func displayName(for uid: String) -> String {
+        requesterProfiles[uid]?.displayName ?? "Loading name..."
+    }
+
+    func email(for uid: String) -> String {
+        requesterProfiles[uid]?.email ?? "Loading email..."
+    }
+
     func refresh() {
         refreshTask?.cancel()
         refreshTask = Task {
             isLoading = true
             defer { isLoading = false }
 
-            // Fetch from local SwiftData (predicate pushed into SQLite)
+            // 1. Pull from local SwiftData (predicate pushed into SQLite)
             let ctx = ModelContext(container)
             let sellerIDCapture = sellerID
             let descriptor = FetchDescriptor<DonationRequestRecord>(
                 predicate: #Predicate { $0.sellerID == sellerIDCapture },
                 sortBy: [SortDescriptor(\DonationRequestRecord.createdAt, order: .reverse)]
             )
+            let local = (try? ctx.fetch(descriptor)) ?? []
+
+            // 2. If online, also pull from Firestore and merge into local store
+            //    so the seller sees requests that were created from another device
+            //    (e.g. iOS user views requests created by Flutter users).
+            if NetworkMonitor.shared.isConnected {
+                if let remote = try? await DonationService.shared.fetchIncomingRequests(for: sellerID) {
+                    for r in remote {
+                        if let existing = local.first(where: { $0.id == r.id }) {
+                            // Don't clobber an unsynced local decision with a stale remote status.
+                            if existing.isSyncedDecision {
+                                existing.status = r.status
+                                existing.resolvedAt = r.resolvedAt
+                            }
+                        } else {
+                            ctx.insert(DonationRequestRecord.from(r, isSyncedClaim: true, isSyncedDecision: true))
+                        }
+                    }
+                    try? ctx.save()
+                }
+            }
+
+            // 3. Re-fetch after merge so requests reflect what's on disk.
             requests = (try? ctx.fetch(descriptor)) ?? []
 
-            // Hydrate requester display names using TaskGroup + ConcurrencyLimiter
+            // 4. Hydrate profiles using a bounded TaskGroup (multithreading rubric)
             let ids = Set(requests.map { $0.requesterID })
             let limiter = ConcurrencyLimiter(max: 8)
             let db = self.db
 
-            await withTaskGroup(of: (String, String?).self) { group in
+            await withTaskGroup(of: (String, CachedDonationRequester?).self) { group in
                 for uid in ids {
                     group.addTask {
                         await limiter.wait()
                         defer { Task { await limiter.signal() } }
 
-                        // Try the shared profile cache first
                         if let cached = await DonationRequesterProfileCache.shared.get(uid: uid) {
-                            return (uid, cached.displayName)
+                            return (uid, cached)
                         }
-                        if let cached = await UserProfileCache.shared.lookup(uid: uid) {
-                            return (uid, cached.displayName)
-                        }
-
-                        // Firestore fallback
                         let snap = try? await db.collection("users").document(uid).getDocument()
-                        let name = snap?.data()?["displayName"] as? String ?? "Unknown"
-                        let pic  = snap?.data()?["profilePic"] as? String
-                        let entry = await CachedDonationRequester(uid: uid, displayName: name, profilePicURL: pic)
+                        let data = snap?.data() ?? [:]
+                        let name  = data["displayName"] as? String ?? "Unknown"
+                        let email = data["email"] as? String
+                        let pic   = data["profilePic"] as? String
+                        let entry = await CachedDonationRequester(uid: uid, displayName: name, email: email, profilePicURL: pic)
                         await DonationRequesterProfileCache.shared.set(entry, for: uid)
-                        return (uid, name)
+                        return (uid, entry)
                     }
                 }
-                for await (uid, name) in group {
-                    requesterNames[uid] = name
+                for await (uid, entry) in group {
+                    if let entry { requesterProfiles[uid] = entry }
                 }
             }
 
@@ -74,38 +103,14 @@ final class IncomingDonationRequestsViewModel: ObservableObject {
     }
 
     func approveRequest(_ id: String) async {
-        let ctx = ModelContext(container)
-        let idCapture = id
-        let descriptor = FetchDescriptor<DonationRequestRecord>(
-            predicate: #Predicate { $0.id == idCapture }
-        )
-        guard let record = (try? ctx.fetch(descriptor))?.first else { return }
-
-        let waitTime = Int(Date().timeIntervalSince(record.createdAt))
-        let listingID = record.donationListingID
-        let requesterID = record.requesterID
-
-        record.status = .approved
-        record.resolvedAt = Date()
-        record.isSyncedDecision = false
-        try? ctx.save()
-
-        PendingDonationsSyncer.shared.addPendingDecision(id)
-        AnalyticsService.shared.track(
-            .donationApproved(listingID: listingID, requesterID: requesterID, waitTimeSeconds: waitTime)
-        )
-
-        if NetworkMonitor.shared.isConnected {
-            if (try? await DonationService.shared.updateDonationRequestStatus(id, status: .approved)) != nil {
-                record.isSyncedDecision = true
-                try? ctx.save()
-                PendingDonationsSyncer.shared.removePendingDecision(id)
-            }
-        }
-        refresh()
+        await mutateDecision(id, to: .approved)
     }
 
     func declineRequest(_ id: String) async {
+        await mutateDecision(id, to: .declined)
+    }
+
+    private func mutateDecision(_ id: String, to newStatus: DonationRequestStatus) async {
         let ctx = ModelContext(container)
         let idCapture = id
         let descriptor = FetchDescriptor<DonationRequestRecord>(
@@ -115,19 +120,29 @@ final class IncomingDonationRequestsViewModel: ObservableObject {
 
         let listingID = record.donationListingID
         let requesterID = record.requesterID
+        let waitTime = Int(Date().timeIntervalSince(record.createdAt))
 
-        record.status = .declined
+        record.status = newStatus
         record.resolvedAt = Date()
         record.isSyncedDecision = false
         try? ctx.save()
 
         PendingDonationsSyncer.shared.addPendingDecision(id)
-        AnalyticsService.shared.track(
-            .donationDeclined(listingID: listingID, requesterID: requesterID)
-        )
+        switch newStatus {
+        case .approved:
+            AnalyticsService.shared.track(
+                .donationApproved(listingID: listingID, requesterID: requesterID, waitTimeSeconds: waitTime)
+            )
+        case .declined:
+            AnalyticsService.shared.track(
+                .donationDeclined(listingID: listingID, requesterID: requesterID)
+            )
+        default:
+            break
+        }
 
         if NetworkMonitor.shared.isConnected {
-            if (try? await DonationService.shared.updateDonationRequestStatus(id, status: .declined)) != nil {
+            if (try? await DonationService.shared.updateDonationRequestStatus(id, status: newStatus)) != nil {
                 record.isSyncedDecision = true
                 try? ctx.save()
                 PendingDonationsSyncer.shared.removePendingDecision(id)

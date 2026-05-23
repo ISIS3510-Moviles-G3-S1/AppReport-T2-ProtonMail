@@ -16,6 +16,10 @@ final class ProductDetailViewModel: ObservableObject {
     let rating: Double?
     let description: String
     let isOwnListing: Bool
+    /// Listing type — drives the "Claim Donation" CTA in ProductDetailView.
+    let kind: ListingKind
+    /// Source product for handing off to the donation request flow.
+    let product: Product
 
     @Published var title: String
     @Published var price: Int
@@ -27,6 +31,8 @@ final class ProductDetailViewModel: ObservableObject {
     private var sourceProduct: Product?
 
     init(product: Product, isOwnListing: Bool = false) {
+        self.product = product
+        self.kind = product.kind
         self.id = product.id
         self.sellerId = product.sellerId
         self.title = product.title
