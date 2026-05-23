@@ -17,6 +17,7 @@ struct HomeView: View {
 
     let onBrowseItems: () -> Void
     let onStartSelling: () -> Void
+    let onStartDonating: () -> Void
 
     private var browseProducts: [Product] {
         productStore.browseProducts(excludingUserID: session.uid)
@@ -33,8 +34,11 @@ struct HomeView: View {
 
                     HomeActionButtonsView(
                         onBrowseItems: onBrowseItems,
-                        onStartSelling: onStartSelling
+                        onStartSelling: onStartSelling,
+                        onStartDonating: onStartDonating
                     )
+
+                    donationsEntryCard
 
                     seasonSection
 
@@ -90,6 +94,44 @@ struct HomeView: View {
                 .environmentObject(productStore)
                 .environmentObject(session)
         }
+    }
+
+    /// Entry card to the Donations marketplace — opens DonationsBrowseView
+    /// in the current NavigationStack.
+    private var donationsEntryCard: some View {
+        NavigationLink {
+            DonationsBrowseView(viewModel: DonationsBrowseViewModel())
+        } label: {
+            HStack(spacing: 12) {
+                ZStack {
+                    Circle().fill(AppTheme.accent.opacity(0.15))
+                    Image(systemName: "gift.fill")
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundStyle(AppTheme.accent)
+                }
+                .frame(width: 44, height: 44)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Donations")
+                        .font(.poppinsBold(15))
+                        .foregroundStyle(AppTheme.primaryText)
+                    Text("Browse free items from your peers")
+                        .font(.poppinsRegular(12))
+                        .foregroundStyle(AppTheme.secondaryText)
+                }
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .foregroundStyle(AppTheme.secondaryText)
+            }
+            .padding(14)
+            .background(AppTheme.cardBackground)
+            .overlay(
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .stroke(AppTheme.borderColor, lineWidth: 1)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        }
+        .buttonStyle(.plain)
     }
 
     @ViewBuilder

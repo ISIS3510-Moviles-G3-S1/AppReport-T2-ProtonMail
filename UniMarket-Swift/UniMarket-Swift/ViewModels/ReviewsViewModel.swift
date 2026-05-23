@@ -234,8 +234,9 @@ final class ReviewsViewModel: ObservableObject {
 
             // Step 3 — mark isSynced=true in a background context.
             let rID = reviewID
+            let containerRef = self.container
             await Task.detached(priority: .background) {
-                let bgCtx = ModelContext(container)
+                let bgCtx = ModelContext(containerRef)
                 let predicate = #Predicate<ReviewRecord> { $0.id == rID }
                 if let existing = try? bgCtx.fetch(
                     FetchDescriptor(predicate: predicate)

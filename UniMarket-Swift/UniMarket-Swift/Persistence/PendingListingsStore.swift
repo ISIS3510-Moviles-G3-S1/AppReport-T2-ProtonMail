@@ -35,7 +35,8 @@ final class PendingListingsStore {
             queuedAt: Date(),
             lastTriedAt: nil,
             retryCount: 0,
-            lastError: nil
+            lastError: nil,
+            kindRaw: input.kind.rawValue
         )
 
         let dir = try userDirectory(for: userID)
@@ -76,7 +77,8 @@ final class PendingListingsStore {
             conditionTag: pending.conditionTag,
             description: pending.listingDescription,
             imagesData: images,
-            tags: pending.tags
+            tags: pending.tags,
+            kind: ListingKind(firestoreValue: pending.kindRaw)
         )
     }
 

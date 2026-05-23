@@ -66,6 +66,23 @@ struct UniMarket_SwiftApp: App {
         )
     }()
 
+    // MARK: - Donations ModelContainer
+    //
+    // Stores DonationRequestRecord rows for offline-first claim/decision queues.
+    // Drained by PendingDonationsSyncer when connectivity returns.
+    static let donationsContainer: ModelContainer = {
+        let storeURL = URL.applicationSupportDirectory
+            .appendingPathComponent("UniMarket-Donations.store")
+        let config = ModelConfiguration(
+            url: storeURL,
+            cloudKitDatabase: .none
+        )
+        return try! ModelContainer(
+            for: DonationRequestRecord.self,
+            configurations: config
+        )
+    }()
+
     var body: some Scene {
         WindowGroup {
             RootView()
@@ -88,11 +105,16 @@ struct UniMarket_SwiftApp: App {
                         to: NetworkMonitor.shared,
                         container: Self.reviewsContainer
                     )
+                    PendingDonationsSyncer.shared.bind(
+                        to: NetworkMonitor.shared,
+                        container: Self.donationsContainer
+                    )
                     await PendingListingsSyncer.shared.resumeIfNeeded()
                     await PendingChatMessagesSyncer.shared.resumeIfNeeded()
                     await PendingFavoritesSyncer.shared.resumeIfNeeded()
                     await PendingListingMutationsSyncer.shared.resumeIfNeeded()
                     await PendingReviewsSyncer.shared.resumeIfNeeded()
+                    await PendingDonationsSyncer.shared.resumeIfNeeded()
                 }
                 .tint(AppTheme.accent)
                 .font(.poppinsRegular(16))

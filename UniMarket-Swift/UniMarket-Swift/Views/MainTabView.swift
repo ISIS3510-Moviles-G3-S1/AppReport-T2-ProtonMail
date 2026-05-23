@@ -18,6 +18,9 @@ struct MainTabView: View {
     private let analytics = AnalyticsService.shared
     @State private var selectedTab: MainTab = .home
     @State private var showUpload = false
+    /// Pre-selected listing kind for the upload sheet — flipped to .donation
+    /// when the Home "Donate" button presents it.
+    @State private var uploadKind: ListingKind = .sale
     @State private var tabBarHidden = false
     @StateObject private var profileViewModel = ProfileViewModel()
     /// Owned here so the watchlist survives tab switches and is available to
@@ -65,8 +68,13 @@ struct MainTabView: View {
         .ignoresSafeArea(.keyboard, edges: .bottom)
         .sheet(isPresented: $showUpload) {
             NavigationStack {
-                UploadProductView()
+                UploadProductView(initialKind: uploadKind)
             }
+        }
+        .onChange(of: showUpload) { _, isShowing in
+            // Reset to .sale once dismissed so the next plain "Start Selling"
+            // tap doesn't accidentally inherit the previous donation flag.
+            if !isShowing { uploadKind = .sale }
         }
         .onAppear {
             analytics.track(.tabSelected(selectedTab.analyticsName))
@@ -146,7 +154,14 @@ struct MainTabView: View {
             NavigationStack {
                 HomeView(
                     onBrowseItems: { selectedTab = .search },
-                    onStartSelling: { showUpload = true }
+                    onStartSelling: {
+                        uploadKind = .sale
+                        showUpload = true
+                    },
+                    onStartDonating: {
+                        uploadKind = .donation
+                        showUpload = true
+                    }
                 )
             }
         case .search:

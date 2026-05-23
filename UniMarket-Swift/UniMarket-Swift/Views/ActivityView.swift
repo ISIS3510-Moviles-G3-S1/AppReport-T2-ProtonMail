@@ -62,6 +62,9 @@ struct ActivityView: View {
                         .padding(.horizontal)
                     }
 
+                    donationsLinksSection
+                        .padding(.horizontal)
+
                     Picker("", selection: $vm.selectedTab) {
                         ForEach(ActivityViewModel.Tab.allCases, id: \.self) { tab in
                             Text(tab.rawValue).tag(tab)
@@ -137,6 +140,68 @@ struct ActivityView: View {
         } message: {
             Text(deleteErrorMessage ?? "Unknown error")
         }
+    }
+
+    /// Two destination cards for the donation flows — surfaced above the
+    /// Likes/Listings/Watchlist segmented picker so they're easy to find.
+    private var donationsLinksSection: some View {
+        HStack(spacing: 10) {
+            NavigationLink {
+                MyDonationsView(
+                    viewModel: MyDonationsViewModel(
+                        userID: session.uid ?? "",
+                        container: UniMarket_SwiftApp.donationsContainer
+                    )
+                )
+            } label: {
+                donationLinkCard(icon: "heart.text.square", title: "My Donations",
+                                 subtitle: "Given & claimed")
+            }
+            .buttonStyle(.plain)
+
+            NavigationLink {
+                IncomingDonationRequestsView(
+                    viewModel: IncomingDonationRequestsViewModel(
+                        sellerID: session.uid ?? "",
+                        container: UniMarket_SwiftApp.donationsContainer
+                    )
+                )
+            } label: {
+                donationLinkCard(icon: "tray.and.arrow.down", title: "Incoming Requests",
+                                 subtitle: "Approve / decline")
+            }
+            .buttonStyle(.plain)
+        }
+    }
+
+    private func donationLinkCard(icon: String, title: String, subtitle: String) -> some View {
+        HStack(spacing: 10) {
+            ZStack {
+                Circle().fill(AppTheme.accent.opacity(0.15))
+                Image(systemName: icon)
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(AppTheme.accent)
+            }
+            .frame(width: 34, height: 34)
+            VStack(alignment: .leading, spacing: 1) {
+                Text(title)
+                    .font(.poppinsBold(12))
+                    .foregroundStyle(AppTheme.primaryText)
+                Text(subtitle)
+                    .font(.poppinsRegular(10))
+                    .foregroundStyle(AppTheme.secondaryText)
+                    .lineLimit(1)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(10)
+        .frame(maxWidth: .infinity)
+        .background(AppTheme.cardBackground)
+        .overlay(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .stroke(AppTheme.borderColor, lineWidth: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 
     private var likesSection: some View {
