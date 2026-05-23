@@ -23,6 +23,8 @@ struct Product: Identifiable, Hashable, Codable {
     let imagePath: String?
     let imageURLs: [String]
     var status: ProductStatus
+    /// Defaults to `.sale` for legacy docs that predate the donation/barter feature.
+    var kind: ListingKind
 
     var primaryImageURL: String? {
         imageURLs.first ?? imagePath
@@ -43,7 +45,8 @@ struct Product: Identifiable, Hashable, Codable {
         soldAt: Date? = nil,
         imagePath: String? = nil,
         imageURLs: [String] = [],
-        status: ProductStatus = .active
+        status: ProductStatus = .active,
+        kind: ListingKind = .sale
     ) {
         self.id = id
         self.sellerId = sellerId
@@ -60,6 +63,34 @@ struct Product: Identifiable, Hashable, Codable {
         self.imagePath = imagePath
         self.imageURLs = imageURLs
         self.status = status
+        self.kind = kind
+    }
+
+    // Custom Codable so legacy docs missing "kind" decode as .sale without error.
+    enum CodingKeys: String, CodingKey {
+        case id, sellerId, title, price, sellerName, conditionTag, tags, rating
+        case isFavorite, description, createdAt, soldAt, imagePath, imageURLs, status, kind
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id           = try c.decode(String.self,        forKey: .id)
+        sellerId     = try c.decodeIfPresent(String.self, forKey: .sellerId) ?? ""
+        title        = try c.decode(String.self,        forKey: .title)
+        price        = try c.decode(Int.self,           forKey: .price)
+        sellerName   = try c.decodeIfPresent(String.self, forKey: .sellerName) ?? "Unknown seller"
+        conditionTag = try c.decodeIfPresent(String.self, forKey: .conditionTag) ?? "Good"
+        tags         = try c.decodeIfPresent([String].self, forKey: .tags) ?? []
+        rating       = try c.decodeIfPresent(Double.self, forKey: .rating) ?? 0
+        isFavorite   = try c.decodeIfPresent(Bool.self, forKey: .isFavorite) ?? false
+        description  = try c.decodeIfPresent(String.self, forKey: .description) ?? ""
+        createdAt    = try c.decodeIfPresent(Date.self, forKey: .createdAt) ?? Date()
+        soldAt       = try c.decodeIfPresent(Date.self, forKey: .soldAt)
+        imagePath    = try c.decodeIfPresent(String.self, forKey: .imagePath)
+        imageURLs    = try c.decodeIfPresent([String].self, forKey: .imageURLs) ?? []
+        status       = try c.decodeIfPresent(ProductStatus.self, forKey: .status) ?? .active
+        // Legacy docs don't have "kind" — default to .sale
+        kind         = try c.decodeIfPresent(ListingKind.self, forKey: .kind) ?? .sale
     }
 }
 

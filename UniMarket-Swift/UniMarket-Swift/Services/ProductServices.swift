@@ -11,6 +11,9 @@ extension Notification.Name {
     /// Posted by SessionManager.signOut() so caches keyed to the current user
     /// (e.g. WatchlistPriceCache) can flush their contents immediately.
     static let userDidSignOut = Notification.Name("userDidSignOut")
+    /// Posted by NotificationAggregatorService when connectivity is restored
+    /// so NotificationsView can re-trigger a refresh.
+    static let notificationsReconnected = Notification.Name("notificationsReconnected")
 }
 
 struct CreateProductInput {

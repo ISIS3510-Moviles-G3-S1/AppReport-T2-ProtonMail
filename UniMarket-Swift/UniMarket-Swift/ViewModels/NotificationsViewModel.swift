@@ -193,7 +193,7 @@ final class NotificationsViewModel: ObservableObject {
     /// avoid blocking the main actor during the pre-flight phase.
     private nonisolated func fetchWatchlistIDs() async -> [String] {
         await Task.detached(priority: .utility) {
-            FavoritesCacheManager.shared.loadFavorites().map(\.id)
+            await FavoritesCacheManager.shared.loadFavorites().map(\.id)
         }.value
     }
 }

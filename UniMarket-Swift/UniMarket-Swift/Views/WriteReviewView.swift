@@ -206,9 +206,7 @@ struct WriteReviewView: View {
         isSubmitting = true
 
         let reviewerID   = session.uid ?? ""
-        let displayName  = session.currentUser?.displayName
-                        ?? session.user?.displayName
-                        ?? "Anonymous"
+        let displayName  = session.currentUser?.displayName ?? "Anonymous"
         let text         = reviewText.trimmingCharacters(in: .whitespacesAndNewlines)
         let rating       = selectedRating
 

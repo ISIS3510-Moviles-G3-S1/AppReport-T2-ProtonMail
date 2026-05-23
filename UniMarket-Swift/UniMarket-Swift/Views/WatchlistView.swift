@@ -108,7 +108,7 @@ struct WatchlistView: View {
                 .font(.poppinsSemiBold(17))
                 .foregroundStyle(AppTheme.primaryText)
 
-            Text("Tap "Watch Price" on any listing to\ntrack price drops here.")
+            Text("Tap \"Watch Price\" on any listing to\ntrack price drops here.")
                 .font(.poppinsRegular(14))
                 .foregroundStyle(AppTheme.secondaryText)
                 .multilineTextAlignment(.center)

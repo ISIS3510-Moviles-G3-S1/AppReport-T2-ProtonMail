@@ -544,4 +544,62 @@ extension AnalyticsEvent {
             ]
         )
     }
+
+    // MARK: - Donation Events (BQ#3)
+
+    static func donationListingCreated(listingID: String, category: String) -> AnalyticsEvent {
+        AnalyticsEvent(
+            name: "donation_listing_created",
+            parameters: [
+                "listing_id": .string(listingID),
+                "category": .string(category)
+            ]
+        )
+    }
+
+    static func donationBrowsed(countShown: Int) -> AnalyticsEvent {
+        AnalyticsEvent(
+            name: "donation_browsed",
+            parameters: ["count_shown": .int(countShown)]
+        )
+    }
+
+    static func donationClaimed(listingID: String, sellerID: String, timeSinceListingSeconds: Int) -> AnalyticsEvent {
+        AnalyticsEvent(
+            name: "donation_claimed",
+            parameters: [
+                "listing_id": .string(listingID),
+                "seller_id": .string(sellerID),
+                "time_since_listing_seconds": .int(timeSinceListingSeconds)
+            ]
+        )
+    }
+
+    static func donationApproved(listingID: String, requesterID: String, waitTimeSeconds: Int) -> AnalyticsEvent {
+        AnalyticsEvent(
+            name: "donation_approved",
+            parameters: [
+                "listing_id": .string(listingID),
+                "requester_id": .string(requesterID),
+                "wait_time_seconds": .int(waitTimeSeconds)
+            ]
+        )
+    }
+
+    static func donationDeclined(listingID: String, requesterID: String) -> AnalyticsEvent {
+        AnalyticsEvent(
+            name: "donation_declined",
+            parameters: [
+                "listing_id": .string(listingID),
+                "requester_id": .string(requesterID)
+            ]
+        )
+    }
+
+    static func donationPickedUp(listingID: String) -> AnalyticsEvent {
+        AnalyticsEvent(
+            name: "donation_picked_up",
+            parameters: ["listing_id": .string(listingID)]
+        )
+    }
 }

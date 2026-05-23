@@ -72,7 +72,7 @@ enum NotificationAggregatorService {
             var items: [NotificationItem] = []
             let now = Date()
 
-            let pendingListings = PendingListingsStore.shared.count(for: userID)
+            let pendingListings = await PendingListingsStore.shared.count(for: userID)
             if pendingListings > 0 {
                 items.append(NotificationItem(
                     id:             "sync_listings",
@@ -84,7 +84,7 @@ enum NotificationAggregatorService {
                 ))
             }
 
-            let pendingMessages = PendingChatMessagesStore.shared.count(for: userID)
+            let pendingMessages = await PendingChatMessagesStore.shared.count(for: userID)
             if pendingMessages > 0 {
                 items.append(NotificationItem(
                     id:             "sync_messages",
@@ -96,7 +96,7 @@ enum NotificationAggregatorService {
                 ))
             }
 
-            let pendingFavorites = PendingFavoritesStore.shared.count(for: userID)
+            let pendingFavorites = await PendingFavoritesStore.shared.count(for: userID)
             if pendingFavorites > 0 {
                 items.append(NotificationItem(
                     id:             "sync_favorites",
@@ -108,7 +108,7 @@ enum NotificationAggregatorService {
                 ))
             }
 
-            let pendingMutations = PendingListingMutationsStore.shared.count(for: userID)
+            let pendingMutations = await PendingListingMutationsStore.shared.count(for: userID)
             if pendingMutations > 0 {
                 items.append(NotificationItem(
                     id:             "sync_mutations",
