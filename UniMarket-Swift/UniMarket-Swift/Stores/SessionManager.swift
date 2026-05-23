@@ -147,6 +147,7 @@ final class SessionManager: ObservableObject {
         RecentlyViewedCache.shared.clear(for: evictedUID)
         NotificationsCache.shared.clear(userID: evictedUID)
         WatchlistPriceCache.shared.clear()
+        NotificationCenter.default.post(name: .userDidSignOut, object: nil)
         analytics.track(.signOut())
         analytics.reset()
     }

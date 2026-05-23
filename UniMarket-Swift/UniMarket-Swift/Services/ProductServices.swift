@@ -8,6 +8,9 @@ import UIKit
 extension Notification.Name {
     static let userDidCreateListing = Notification.Name("userDidCreateListing")
     static let userDidSellListing = Notification.Name("userDidSellListing")
+    /// Posted by SessionManager.signOut() so caches keyed to the current user
+    /// (e.g. WatchlistPriceCache) can flush their contents immediately.
+    static let userDidSignOut = Notification.Name("userDidSignOut")
 }
 
 struct CreateProductInput {
@@ -163,6 +166,19 @@ final class ProductService {
             // Notify that user sold a listing
             NotificationCenter.default.post(name: .userDidSellListing, object: nil)
         }
+    }
+
+    // MARK: - Watchlist support
+
+    /// Fetches only the current price for a single product document.
+    /// Used by `WatchlistViewModel.refreshAllPrices()` so we make a minimal
+    /// network read (one field) instead of deserialising the full product.
+    func fetchCurrentPrice(for productID: String) async throws -> Int {
+        let doc = try await db.collection(collectionName).document(productID).getDocument()
+        guard let price = doc.data()?["price"] as? Int else {
+            throw ProductServiceError.invalidProductData
+        }
+        return price
     }
 
     func deleteProduct(_ product: Product) async throws {

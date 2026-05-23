@@ -14,6 +14,7 @@ struct ProductDetailView: View {
     @EnvironmentObject private var session: SessionManager
     @EnvironmentObject private var cartStore: CartStore
 
+    @EnvironmentObject private var watchlistVM: WatchlistViewModel
     @StateObject private var vm: ProductDetailViewModel
     @StateObject private var networkMonitor = NetworkMonitor()
     @State private var editingProduct: Product?
@@ -104,6 +105,22 @@ struct ProductDetailView: View {
                                     .font(.poppinsRegular(14))
                                     .foregroundStyle(AppTheme.secondaryText)
                             }
+                        }
+
+                        // Reviews link — minimal injection; no structural changes.
+                        NavigationLink {
+                            SellerReviewsView(sellerID: vm.sellerId)
+                                .environmentObject(session)
+                        } label: {
+                            HStack(spacing: 4) {
+                                Image(systemName: "star.bubble")
+                                    .font(.caption)
+                                Text("Reviews")
+                                    .font(.poppinsSemiBold(13))
+                                Image(systemName: "chevron.right")
+                                    .font(.caption2)
+                            }
+                            .foregroundStyle(AppTheme.accent)
                         }
                     }
 
@@ -422,6 +439,9 @@ struct ProductDetailView: View {
             }
             .disabled(vm.status != .active)
             .opacity(vm.status == .active ? 1 : 0.55)
+
+            // MARK: Watch Price button
+            WatchlistAddButton(product: product)
             } // end VStack (buyer)
         }
     }

@@ -9,6 +9,7 @@ import SwiftUI
 import UIKit
 import FirebaseCore
 import UserNotifications
+import SwiftData
 
 final class AppDelegate: NSObject, UIApplicationDelegate {
     func application(_ application: UIApplication,
@@ -45,6 +46,26 @@ struct UniMarket_SwiftApp: App {
     @StateObject private var productStore = ProductStore()
     @StateObject private var cartStore = CartStore()
 
+    // MARK: - Reviews ModelContainer
+    //
+    // Stored in applicationSupportDirectory/UniMarket-Reviews.store.
+    // CloudKit is disabled — reviews are synced manually via Firestore.
+    // Accessed by SellerReviewsView, ReviewsViewModel, and PendingReviewsSyncer.
+    static let reviewsContainer: ModelContainer = {
+        let storeURL = URL.applicationSupportDirectory
+            .appendingPathComponent("UniMarket-Reviews.store")
+        let config = ModelConfiguration(
+            url: storeURL,
+            cloudKitDatabase: .none
+        )
+        // Crash at launch is intentional: a migration failure here means the
+        // store schema has changed without a proper migration plan.
+        return try! ModelContainer(
+            for: ReviewRecord.self, ReviewReplyRecord.self,
+            configurations: config
+        )
+    }()
+
     var body: some Scene {
         WindowGroup {
             RootView()
@@ -52,6 +73,9 @@ struct UniMarket_SwiftApp: App {
                 .environmentObject(chatStore)
                 .environmentObject(productStore)
                 .environmentObject(cartStore)
+                // Inject the reviews container so @Query works in any
+                // descendant view (SellerReviewsView uses it).
+                .modelContainer(Self.reviewsContainer)
                 .task {
                     productStore.prefetchImages(for: productStore.activeProducts)
                     // Bind syncers once; resumeIfNeeded drains anything
@@ -60,10 +84,15 @@ struct UniMarket_SwiftApp: App {
                     PendingChatMessagesSyncer.shared.bind(to: NetworkMonitor.shared)
                     PendingFavoritesSyncer.shared.bind(to: NetworkMonitor.shared)
                     PendingListingMutationsSyncer.shared.bind(to: NetworkMonitor.shared)
+                    PendingReviewsSyncer.shared.bind(
+                        to: NetworkMonitor.shared,
+                        container: Self.reviewsContainer
+                    )
                     await PendingListingsSyncer.shared.resumeIfNeeded()
                     await PendingChatMessagesSyncer.shared.resumeIfNeeded()
                     await PendingFavoritesSyncer.shared.resumeIfNeeded()
                     await PendingListingMutationsSyncer.shared.resumeIfNeeded()
+                    await PendingReviewsSyncer.shared.resumeIfNeeded()
                 }
                 .tint(AppTheme.accent)
                 .font(.poppinsRegular(16))

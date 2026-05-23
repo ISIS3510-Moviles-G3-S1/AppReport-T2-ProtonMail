@@ -11,6 +11,7 @@ import FirebaseAuth
 struct ActivityView: View {
     @EnvironmentObject private var productStore: ProductStore
     @EnvironmentObject private var session: SessionManager
+    @EnvironmentObject private var watchlistVM: WatchlistViewModel
     @StateObject private var vm = ActivityViewModel()
     @ObservedObject private var pendingFavorites = PendingFavoritesSyncer.shared
     @State private var selectedListing: Product?
@@ -73,12 +74,16 @@ struct ActivityView: View {
                         switch vm.selectedTab {
                         case .likes:
                             likesSection
+                                .padding(.horizontal)
+                                .padding(.bottom, 90)
                         case .listings:
                             listingsSection
+                                .padding(.horizontal)
+                                .padding(.bottom, 90)
+                        case .watchlist:
+                            WatchlistView(viewModel: watchlistVM)
                         }
                     }
-                    .padding(.horizontal)
-                    .padding(.bottom, 90)
                 }
                 .padding(.top, 10)
             }
