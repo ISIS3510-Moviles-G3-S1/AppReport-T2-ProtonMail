@@ -13,6 +13,7 @@ struct HomeView: View {
     @EnvironmentObject private var session: SessionManager
     @StateObject private var viewModel = HomeViewModel()
     @State private var recentlyViewed: [Product] = []
+    @State private var showNotifications = false
 
     let onBrowseItems: () -> Void
     let onStartSelling: () -> Void
@@ -56,6 +57,15 @@ struct HomeView: View {
             ToolbarItemGroup(placement: .topBarTrailing) {
                 CartToolbarButton()
 
+                // Bell icon — opens the Concurrent Notifications Aggregator sheet.
+                Button {
+                    showNotifications = true
+                } label: {
+                    Image(systemName: "bell")
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundStyle(AppTheme.primaryText)
+                }
+
                 NavigationLink {
                     ChatInboxView()
                 } label: {
@@ -73,6 +83,12 @@ struct HomeView: View {
                     }
                 }
             }
+        }
+        .sheet(isPresented: $showNotifications) {
+            NotificationsView()
+                .environmentObject(chatStore)
+                .environmentObject(productStore)
+                .environmentObject(session)
         }
     }
 

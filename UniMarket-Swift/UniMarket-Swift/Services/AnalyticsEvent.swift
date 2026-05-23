@@ -470,6 +470,40 @@ extension AnalyticsEvent {
         }
     }
 
+    // MARK: - Notifications
+
+    /// Fired when the concurrent aggregator completes a full refresh cycle.
+    static func notificationsRefreshed(
+        messageCount:   Int,
+        priceDropCount: Int,
+        syncCount:      Int,
+        activityCount:  Int
+    ) -> AnalyticsEvent {
+        AnalyticsEvent(
+            name: "notifications_refreshed",
+            parameters: [
+                "message_count":    .int(messageCount),
+                "price_drop_count": .int(priceDropCount),
+                "sync_count":       .int(syncCount),
+                "activity_count":   .int(activityCount),
+                "total_count":      .int(messageCount + priceDropCount + syncCount + activityCount)
+            ]
+        )
+    }
+
+    /// Fired when the user taps a notification row and deep-links to a destination.
+    static func notificationTapped(type: String, target: String) -> AnalyticsEvent {
+        AnalyticsEvent(
+            name: "notification_tapped",
+            parameters: [
+                "notification_type": .string(type),
+                "deep_link_target":  .string(target)
+            ]
+        )
+    }
+
+    // MARK: - Purchases
+
     static func purchaseConfirmed(productID: String, transactionID: String, source: String) -> AnalyticsEvent {
         AnalyticsEvent(
             name: "purchase_confirmed",
