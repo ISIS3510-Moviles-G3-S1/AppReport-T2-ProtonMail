@@ -16,6 +16,7 @@ final class WatchlistPriceEntry: NSObject {
 /// Shared cache that supports both:
 /// - Watchlist screen price snapshots (NSCache)
 /// - Notifications price-drop detection (UserDefaults baseline/current snapshots)
+@MainActor
 final class WatchlistPriceCache {
     static let shared = WatchlistPriceCache()
 
