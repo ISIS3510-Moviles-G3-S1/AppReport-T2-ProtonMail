@@ -28,6 +28,10 @@ final class BrowseSearchViewModel: ObservableObject {
     @Published var maxPrice: Int = 0 {
         didSet { scheduleBrowseRefresh() }
     }
+    /// Filter chip — when on, only kind == .donation listings pass through.
+    @Published var showDonationsOnly: Bool = false {
+        didSet { scheduleBrowseRefresh() }
+    }
     @Published private(set) var products: [Product] = [] {
         didSet {
             if oldValue.map(\.id) != products.map(\.id) {
@@ -64,6 +68,7 @@ final class BrowseSearchViewModel: ObservableObject {
         if minRating > 0 { count += 1 }
         if minPrice != priceBounds.lowerBound || maxPrice != priceBounds.upperBound { count += 1 }
         if sortOption != .relevance { count += 1 }
+        if showDonationsOnly { count += 1 }
         return count
     }
 
@@ -108,6 +113,7 @@ final class BrowseSearchViewModel: ObservableObject {
         onlyFavorites = false
         minRating = 0
         sortOption = .relevance
+        showDonationsOnly = false
         resetPriceRange()
     }
 
@@ -129,7 +135,8 @@ final class BrowseSearchViewModel: ObservableObject {
             minRating: minRating,
             sortOption: sortOption,
             minPrice: minPrice,
-            maxPrice: maxPrice
+            maxPrice: maxPrice,
+            showDonationsOnly: showDonationsOnly
         )
 
         isSearching = true

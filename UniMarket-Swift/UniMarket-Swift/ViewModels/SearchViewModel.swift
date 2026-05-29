@@ -33,6 +33,32 @@ struct BrowseSearchSnapshot: Sendable {
     let sortOption: SearchSortOption
     let minPrice: Int
     let maxPrice: Int
+    /// When true, only listings with kind == .donation pass the filter.
+    let showDonationsOnly: Bool
+
+    init(
+        products: [Product],
+        query: String,
+        selectedTag: String?,
+        selectedConditions: Set<String>,
+        onlyFavorites: Bool,
+        minRating: Double,
+        sortOption: SearchSortOption,
+        minPrice: Int,
+        maxPrice: Int,
+        showDonationsOnly: Bool = false
+    ) {
+        self.products = products
+        self.query = query
+        self.selectedTag = selectedTag
+        self.selectedConditions = selectedConditions
+        self.onlyFavorites = onlyFavorites
+        self.minRating = minRating
+        self.sortOption = sortOption
+        self.minPrice = minPrice
+        self.maxPrice = maxPrice
+        self.showDonationsOnly = showDonationsOnly
+    }
 }
 
 enum SearchBrowseEngine {
@@ -57,8 +83,9 @@ enum SearchBrowseEngine {
             let matchesPrice = product.price >= snapshot.minPrice && product.price <= snapshot.maxPrice
             let matchesFavorite = !snapshot.onlyFavorites || product.isFavorite
             let matchesRating = product.rating >= snapshot.minRating
+            let matchesKind = !snapshot.showDonationsOnly || product.kind == .donation
 
-            return matchesQuery && matchesTag && matchesCondition && matchesPrice && matchesFavorite && matchesRating
+            return matchesQuery && matchesTag && matchesCondition && matchesPrice && matchesFavorite && matchesRating && matchesKind
         }
 
         switch snapshot.sortOption {

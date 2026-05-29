@@ -118,9 +118,30 @@ final class ScanQRViewModel: ObservableObject {
                 transactionID: payload.transactionId,
                 source: source.rawValue
             ))
+
+            // BQ#3 — donation fulfilment marker. When the QR belongs to a
+            // donation listing, emit donation_picked_up so the funnel chart
+            // can complete the donation_claimed → donation_approved → picked_up
+            // pipeline. Done as a best-effort lookup; a missing kind defaults
+            // to .sale and emits nothing extra.
+            let listingKind = await fetchListingKind(listingID: payload.listingId)
+            if listingKind == .donation {
+                analytics.track(.donationPickedUp(listingID: payload.listingId))
+            }
             scanState = .confirmed
         } catch {
             scanState = .error(error.localizedDescription)
+        }
+    }
+
+    private func fetchListingKind(listingID: String) async -> ListingKind {
+        let db = Firestore.firestore()
+        do {
+            let doc = try await db.collection("listings").document(listingID).getDocument()
+            let raw = doc.data()?["kind"] as? String
+            return ListingKind(firestoreValue: raw)
+        } catch {
+            return .sale
         }
     }
 }
