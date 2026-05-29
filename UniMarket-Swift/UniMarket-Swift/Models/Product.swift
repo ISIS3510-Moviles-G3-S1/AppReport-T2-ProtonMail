@@ -88,9 +88,15 @@ struct Product: Identifiable, Hashable, Codable {
         soldAt       = try c.decodeIfPresent(Date.self, forKey: .soldAt)
         imagePath    = try c.decodeIfPresent(String.self, forKey: .imagePath)
         imageURLs    = try c.decodeIfPresent([String].self, forKey: .imageURLs) ?? []
-        status       = try c.decodeIfPresent(ProductStatus.self, forKey: .status) ?? .active
-        // Legacy docs don't have "kind" — default to .sale
-        kind         = try c.decodeIfPresent(ListingKind.self, forKey: .kind) ?? .sale
+        // Firestore writes status via `firestoreValue` (lowercase) while the
+        // enum rawValue is capitalized — decode through the case-insensitive
+        // initializer so Firestore documents don't throw on the lowercase form.
+        let statusRaw = try c.decodeIfPresent(String.self, forKey: .status)
+        status       = ProductStatus(firestoreValue: statusRaw)
+        // Legacy docs don't have "kind" — default to .sale via the
+        // case-insensitive parser.
+        let kindRaw  = try c.decodeIfPresent(String.self, forKey: .kind)
+        kind         = ListingKind(firestoreValue: kindRaw)
     }
 }
 

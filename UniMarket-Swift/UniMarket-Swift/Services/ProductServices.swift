@@ -328,7 +328,8 @@ final class ProductService {
             soldAt: soldAtTimestamp?.dateValue(),
             imagePath: data["imagePath"] as? String,
             imageURLs: imageURLs,
-            status: ProductStatus(firestoreValue: data["status"] as? String)
+            status: ProductStatus(firestoreValue: data["status"] as? String),
+            kind: ListingKind(firestoreValue: data["kind"] as? String)
         )
     }
 }

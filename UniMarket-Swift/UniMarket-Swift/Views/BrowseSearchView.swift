@@ -101,6 +101,14 @@ struct BrowseSearchView: View {
                                 viewModel.selectTag(nil)
                             }
 
+                            // Donations filter chip — toggles kind=.donation only.
+                            SearchTagChip(
+                                label: "Donations",
+                                isSelected: viewModel.showDonationsOnly
+                            ) {
+                                viewModel.showDonationsOnly.toggle()
+                            }
+
                             ForEach(viewModel.availableTags, id: \.self) { tag in
                                 SearchTagChip(label: tag.capitalized, isSelected: viewModel.selectedTag == tag) {
                                     viewModel.selectTag(tag)
