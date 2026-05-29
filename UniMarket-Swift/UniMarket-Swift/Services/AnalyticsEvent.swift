@@ -545,6 +545,30 @@ extension AnalyticsEvent {
         )
     }
 
+    // MARK: - Watchlist Events (BQ#4)
+
+    static func watchlistItemAdded(productID: String, category: String, originalPrice: Int) -> AnalyticsEvent {
+        AnalyticsEvent(
+            name: "watchlist_item_added",
+            parameters: [
+                "product_id": .string(productID),
+                "category": .string(category),
+                "original_price": .int(originalPrice)
+            ]
+        )
+    }
+
+    static func watchlistPriceDropDetected(productID: String, priceDelta: Int, category: String) -> AnalyticsEvent {
+        AnalyticsEvent(
+            name: "watchlist_price_drop_detected",
+            parameters: [
+                "product_id": .string(productID),
+                "price_delta": .int(priceDelta),
+                "category": .string(category)
+            ]
+        )
+    }
+
     // MARK: - Donation Events (BQ#3)
 
     static func donationListingCreated(listingID: String, category: String) -> AnalyticsEvent {
