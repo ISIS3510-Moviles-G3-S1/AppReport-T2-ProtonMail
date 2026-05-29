@@ -61,6 +61,13 @@ final class WatchlistViewModel: ObservableObject {
         )
 
         store.add(entry: entry, for: uid)
+        AnalyticsService.shared.track(
+            .watchlistItemAdded(
+                productID: product.id,
+                category: "unknown",
+                originalPrice: product.price
+            )
+        )
 
         if !watchedItems.contains(where: { $0.id == product.id }) {
             watchedItems.append(entry)
@@ -150,6 +157,16 @@ final class WatchlistViewModel: ObservableObject {
                     )
                     // Update the published dictionary on MainActor (Task context)
                     cachedPrices[productID] = snapshot
+
+                    if let prev = previous, price < prev {
+                        AnalyticsService.shared.track(
+                            .watchlistPriceDropDetected(
+                                productID: productID,
+                                priceDelta: prev - price,
+                                category: "unknown"
+                            )
+                        )
+                    }
                 }
             }
         }
